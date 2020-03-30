@@ -33,8 +33,8 @@ main
 #include "freertos/task.h"
 #include "nvs_flash.h"
 
-#include "gl-app/GestureLooper.hpp"
-#include "gl-hal/WiFi.hpp"
+#include "GestureLooper/GestureLooper.hpp"
+#include "GestureLooper/WiFi.hpp"
 
 static const char* TAG = "main";
 const int LINK_POLL_PRIORITY = 2;
@@ -59,10 +59,10 @@ void init_spiffs() {
 
 void wifi_switch_task(void* user_param) {
   while (true) {
-    bool wifi_status = gl::wifi::is_connected();
+    bool wifi_status = GestureLooper::wifi::is_connected();
     static bool last_wifi_status;
     if (!wifi_status && wifi_status == last_wifi_status) {
-      gl::wifi::connect_to_next();
+      GestureLooper::wifi::connect_to_next();
     }
     last_wifi_status = wifi_status;
     ESP_LOGI(TAG, "HEAP: %d bytes", xPortGetFreeHeapSize());
@@ -71,9 +71,9 @@ void wifi_switch_task(void* user_param) {
 }
 
 void gl_task(void* user_param) {
-  gl::GestureLooper* app = new gl::GestureLooper();
+  GestureLooper::GestureLooper* app = new GestureLooper::GestureLooper();
   while (true) {
-    app->main_task();
+    app->update();
     vTaskDelay(1);
   }
 }
@@ -91,9 +91,9 @@ extern "C" void app_main() {
   ESP_ERROR_CHECK(err);
 
   init_spiffs();
-  gl::wifi::init();
+  GestureLooper::wifi::init();
 
-  if (gl::wifi::num_saved_networks() == 0) {
+  if (GestureLooper::wifi::num_saved_networks() == 0) {
     ESP_LOGI(TAG, "no wifif found, saving default");
     wifi_config_t wifi_config;
     uint8_t ssid[33] = "dlink-FA68";
@@ -102,16 +102,12 @@ extern "C" void app_main() {
     memcpy(wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     memcpy(wifi_config.sta.password, password,
            sizeof(wifi_config.sta.password));
-    gl::wifi::save_wifi_network(&wifi_config);
-    gl::wifi::connect_to_next();
+    GestureLooper::wifi::save_wifi_network(&wifi_config);
+    GestureLooper::wifi::connect_to_next();
   }
 
   xTaskCreatePinnedToCore(gl_task, "gl", 4096, NULL, 10, NULL, 1);
   xTaskCreatePinnedToCore(wifi_switch_task, "wifi_switch", 2048, NULL,
                           WIFI_SWITCH_PRIORITY, NULL, 0);
-
-  while (true) {
-    ableton::link::platform::IoContext::poll();
-    vTaskDelay(1);
-  }
+  vTaskDelete(NULL);
 }

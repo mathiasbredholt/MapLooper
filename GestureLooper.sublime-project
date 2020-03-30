@@ -2,28 +2,7 @@
     "folders":
     [
         {
-            "folder_exclude_patterns":
-            [
-                "build",
-                "asio-standalone",
-                "Catch2",
-        "*.xcodeproj"
-            ],
-            "name": "Firmware",
-            "path": "firmware"
-        },
-        {
-            "folder_exclude_patterns":
-            [
-                "node_modules",
-                "dist"
-            ],
-            "name": "Visualization",
-            "path": "visualization"
-        },
-        {
-            "name": "External",
-            "path": "external"
+            "path": "./",
         }
     ],
     "settings":
