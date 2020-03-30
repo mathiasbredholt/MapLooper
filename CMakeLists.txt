@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.5)
+set(external_dir ../../../external)
+set(EXTRA_COMPONENT_DIRS ../external/libmapper_idf/components ../external/esp32-idf-blemidi/components)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(GestureLooper)
