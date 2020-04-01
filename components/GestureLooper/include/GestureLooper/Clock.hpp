@@ -1,18 +1,18 @@
 /*
 
-          ___  
-         (   ) 
-  .--.    | |  
- /    \   | |  
-;  ,-. '  | |  
-| |  | |  | |  
-| |  | |  | |  
-| |  | |  | |  
-| '  | |  | |  
-'  `-' |  | |  
- `.__. | (___) 
- ( `-' ;       
-  `.__.        
+          ___
+         (   )
+  .--.    | |
+ /    \   | |
+;  ,-. '  | |
+| |  | |  | |
+| |  | |  | |
+| |  | |  | |
+| '  | |  | |
+'  `-' |  | |
+ `.__. | (___)
+ ( `-' ;
+  `.__.
 
 Gesture Looper
 (c) Mathias Bredholt 2020
@@ -26,8 +26,8 @@ A clock module that interfaces with Ableton Link.
 
 #pragma once
 
-#include <cstdint>
 #include <climits>
+#include <cstdint>
 #include <functional>
 #include <thread>
 
@@ -38,10 +38,7 @@ A clock module that interfaces with Ableton Link.
 #include "freertos/task.h"
 #endif
 
-#include "ableton/Link.hpp"
-
 namespace GestureLooper {
-
 class Clock {
  public:
   static constexpr double TICKS_PER_QUARTER_NOTE = 96.0;
@@ -51,7 +48,7 @@ class Clock {
   static constexpr double q = 4.0;
 
   Clock();
-  
+
   void reset();
 
   void start();
@@ -68,8 +65,8 @@ class Clock {
 
   void set_start_stop_callback(std::function<void(bool)> callback);
 
-private:
-  ableton::Link _link;
+ private:
+  void* _link;
 
   TaskHandle_t _link_task_handle;
 };

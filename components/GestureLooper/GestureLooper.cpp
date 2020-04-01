@@ -28,12 +28,14 @@ Top level module
 
 namespace GestureLooper {
 
-GestureLooper::GestureLooper() : sequencer(nullptr), mapper(&_ptn, &sequencer) {
+GestureLooper::GestureLooper(mapper_device* libmapper_device)
+    : sequencer(&_ptn),
+      mapper(libmapper_device, &_ptn, &sequencer) {
   midi::init();
 }
 
 void GestureLooper::update() {
-  mapper.update();
+  // mapper.update();
   sequencer.update();
 }
 

@@ -33,6 +33,7 @@ Pattern::Pattern() {
   }
   mute_states[0] = false;
   next_mute_states[0] = false;
+  clear();
 }
 
 void Pattern::update(int32_t t) {
@@ -42,7 +43,7 @@ void Pattern::update(int32_t t) {
   // Schedule tracks
   for (Track& r : tracks) {
     if (r.id == active_track_id) {
-      r.gesture_recorder.record_gestures(t, r.get_param(STEPS) * r.get_div());
+      r.gesture_recorder.record_gestures(t, get_length());
     }
     
     if (is_enabled(r)) {
@@ -76,4 +77,42 @@ void Pattern::release_all() {
     r.release_notes();
   }
 }
+
+Track* Pattern::active_track() { return &tracks[active_track_id]; }
+
+int32_t Pattern::get_local_ticks(int32_t ticks) const {
+  return ticks - reset_point;
+}
+
+bool Pattern::is_enabled(const Track& track) {
+  return !mute_states[track.id];
+}
+
+bool Pattern::is_enabled(int id) { return !mute_states[id]; }
+
+int Pattern::get_seq_idx(int32_t ticks) {
+  return mod((get_local_ticks(ticks)) / active_track()->get_div(),
+             get_param(STEPS));
+}
+
+int Pattern::get_param(param_name_t name) {
+  if (name == PATTERN_LENGTH) {
+    return length.get();
+  } else if (name == QUANTIZE) {
+    return quantization.get();
+  } else if (name < NUM_TRACK_PARAMS) {
+    return active_track()->get_param(name);
+  } else {
+    return 0;
+  }
+}
+
+bool Pattern::is_finite() { return length.get() != 8; }
+
+int Pattern::get_length() { return PTN_LENGTH_PRESETS[length.get()]; }
+
+int Pattern::get_quantization() {
+  return PTN_LENGTH_PRESETS[quantization.get()];
+}
+
 }  // namespace GestureLooper

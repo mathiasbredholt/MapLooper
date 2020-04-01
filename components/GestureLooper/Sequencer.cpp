@@ -38,6 +38,7 @@ Sequencer::Sequencer(Pattern* ptn)
       stop_callback_();
     }
   });
+  start();
 }
 
 void Sequencer::start() {
@@ -88,12 +89,12 @@ void Sequencer::active_sensing_() {
 }
 
 void Sequencer::update() {
-  active_sensing_();
+  // active_sensing_();
 
   ticks_ = clock_.get_ticks();
 
   if (tick_function_.is_on_tick(ticks_)) {
-    midi_beat_clock_(ticks_);
+    // midi_beat_clock_(ticks_);
 
     if (ticks_ % 96 == 0) {
       printf("ticks: %d, tempo: %d\n", ticks_, get_tempo());

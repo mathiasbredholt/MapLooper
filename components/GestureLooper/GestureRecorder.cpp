@@ -27,9 +27,9 @@ Class to record gestures
 #include "GestureLooper/GestureRecorder.hpp"
 
 namespace GestureLooper {
-GestureVoice::GestureVoice(GestureRecorder* gestureRecorder, int channel,
+GestureVoice::GestureVoice(GestureData* data, int channel,
                            int duration, int32_t start_time)
-    : gestureRecorder_(gestureRecorder),
+    : _data(data),
       channel_(channel),
       duration_(duration),
       start_time_(start_time) {}
@@ -38,37 +38,37 @@ void GestureVoice::update(int32_t t) {
   int32_t tt = t % duration_;
   midi::message_t msg;
 
-  float pitch_data = gestureRecorder_->data_[0][tt];
-  float pressure_data = gestureRecorder_->data_[1][tt];
-  float timbre_data = gestureRecorder_->data_[2][tt];
+  float pitch_data = _data->at(tt).pitch;
+  float pressure_data = _data->at(tt).pressure;
+  float timbre_data = _data->at(tt).timbre;
 
-  pitch_data += gestureRecorder_->rand_data_[0][tt] *
-                gestureRecorder_->rand_modulation_pitch_;
-  pressure_data += gestureRecorder_->rand_data_[1][tt] *
-                   gestureRecorder_->rand_modulation_pressure_;
-  timbre_data += gestureRecorder_->rand_data_[2][tt] *
-                 gestureRecorder_->rand_modulation_timbre_;
+  // pitch_data += gestureRecorder_->rand_data_[0][tt] *
+  //               gestureRecorder_->rand_modulation_pitch_;
+  // pressure_data += gestureRecorder_->rand_data_[1][tt] *
+  //                  gestureRecorder_->rand_modulation_pressure_;
+  // timbre_data += gestureRecorder_->rand_data_[2][tt] *
+  //                gestureRecorder_->rand_modulation_timbre_;
 
-  int d = clip<int>(8192 + pitch_data * 16384, 0, 16383);
-  if (d != last_data_[0]) {
+  if (pitch_data != _last_data.pitch) {
+    int d = clip<int>(8192 + pitch_data * 16384, 0, 16383);
     midi::pitch_bend(&msg, d, channel_);
     midi::send(&msg, midi::ALL);
-    last_data_[0] = d;
+    _last_data.pitch = pitch_data;
   }
 
-  d = clip<int>(pressure_data * 127, 0, 127);
-  if (d != last_data_[1]) {
-    midi::pressure(&msg, d, channel_);
-    midi::send(&msg, midi::ALL);
-    last_data_[1] = d;
-  }
+  // d = clip<int>(pressure_data * 127, 0, 127);
+  // if (d != last_data_[1]) {
+  //   midi::pressure(&msg, d, channel_);
+  //   midi::send(&msg, midi::ALL);
+  //   last_data_[1] = d;
+  // }
 
-  d = clip<int>((timbre_data + 0.5) * 127, 0, 127);
-  if (d != last_data_[2]) {
-    midi::timbre(&msg, d, channel_);
-    midi::send(&msg, midi::ALL);
-    last_data_[2] = d;
-  }
+  // d = clip<int>((timbre_data + 0.5) * 127, 0, 127);
+  // if (d != last_data_[2]) {
+  //   midi::timbre(&msg, d, channel_);
+  //   midi::send(&msg, midi::ALL);
+  //   last_data_[2] = d;
+  // }
 }
 
 bool GestureVoice::is_done(int32_t t) {
@@ -78,18 +78,18 @@ bool GestureVoice::is_done(int32_t t) {
 std::random_device GestureRecorder::rd_;
 
 GestureRecorder::GestureRecorder() : gen_(rd_()), dist_(-1.0f, 1.0f) {
-  for (auto& arr : data_) {
-    arr.fill(0);
+  for (int i = 0; i < MAX_DATA_SIZE; ++i) {
+    _data[i].pitch = i / 384.0f;
   }
-  for (auto& arr : rand_data_) {
-    std::generate(arr.begin(), arr.end(), [this]() { return dist_(gen_); });
-  }
+  // for (auto& arr : rand_data_) {
+  //   std::generate(arr.begin(), arr.end(), [this]() { return dist_(gen_); });
+  // }
 }
 
 void GestureRecorder::set_is_recording(bool enable) { is_recording_ = enable; }
 
 void GestureRecorder::play(int channel, int32_t t, int32_t duration) {
-  GestureVoice voice(this, channel, duration, t);
+  GestureVoice voice(&_data, channel, duration, t);
   voices_.push_back(voice);
 }
 
@@ -126,15 +126,15 @@ void GestureRecorder::update(int32_t t) {
 void GestureRecorder::record_gestures(int32_t t, int32_t duration) {
   if (is_recording_) {
     const int write_idx = t % duration;
-    data_[0][write_idx] = pitch_val_;
-    data_[1][write_idx] = pressure_val_;
-    data_[2][write_idx] = timbre_val_;
+    _data[write_idx].pitch = pitch_val_;
+    _data[write_idx].pressure = pressure_val_;
+    _data[write_idx].timbre = timbre_val_;
 
-    for (int i = 0; i < 3; ++i) {
-      const float val = dist_(gen_);
-      rand_data_[i][write_idx] += val * rand_modulation_;
-      rand_data_[i][write_idx] = fold(rand_data_[i][write_idx], -1.0f, 1.0f);
-    }
+    // for (int i = 0; i < 3; ++i) {
+    //   const float val = dist_(gen_);
+    //   rand_data_[i][write_idx] += val * rand_modulation_;
+    //   rand_data_[i][write_idx] = fold(rand_data_[i][write_idx], -1.0f, 1.0f);
+    // }
   }
 }
 }  // namespace GestureLooper

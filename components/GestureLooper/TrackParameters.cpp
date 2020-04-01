@@ -46,7 +46,7 @@ void TrackParameters::clear_param(param_name_t name) {
       params[name].set(127);
       break;
     case DIVISION:
-      params[name].set(3);
+      params[name].set(0);
       break;
     default:
       break;

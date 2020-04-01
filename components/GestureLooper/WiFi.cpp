@@ -24,8 +24,9 @@ Library for interfacing with WiFi on ESP32
 
 */
 
-#ifdef ESP_PLATFORM
 #include "GestureLooper/WiFi.hpp"
+
+#ifdef ESP_IDF_V4
 
 namespace GestureLooper {
 namespace wifi {

@@ -1,18 +1,18 @@
 /*
 
-          ___  
-         (   ) 
-  .--.    | |  
- /    \   | |  
-;  ,-. '  | |  
-| |  | |  | |  
-| |  | |  | |  
-| |  | |  | |  
-| '  | |  | |  
-'  `-' |  | |  
- `.__. | (___) 
- ( `-' ;       
-  `.__.        
+          ___
+         (   )
+  .--.    | |
+ /    \   | |
+;  ,-. '  | |
+| |  | |  | |
+| |  | |  | |
+| |  | |  | |
+| '  | |  | |
+'  `-' |  | |
+ `.__. | (___)
+ ( `-' ;
+  `.__.
 
 Gesture Looper
 (c) Mathias Bredholt 2020
@@ -28,20 +28,27 @@ Class to record gestures
 
 #include <algorithm>
 #include <array>
-#include <vector>
 #include <random>
+#include <vector>
 
 #include "GestureLooper/MIDI.hpp"
 #include "GestureLooper/Util.hpp"
 
 namespace GestureLooper {
 class GestureRecorder;
+struct gesture_frame_t {
+  float pitch = 0;
+  float pressure = 0;
+  float timbre = 0;
+};
+
+static const int MAX_DATA_SIZE = 384;
+
+typedef std::array<gesture_frame_t, MAX_DATA_SIZE> GestureData;
 
 class GestureVoice {
  public:
-  // static const int MAX_DATA_SIZE = 768;
-  static const int MAX_DATA_SIZE = 1;
-  explicit GestureVoice(GestureRecorder* gestureRecorder, int channel,
+  explicit GestureVoice(GestureData* data, int channel,
                         int duration, int32_t start_time);
 
   void update(int32_t t);
@@ -49,13 +56,13 @@ class GestureVoice {
   bool is_done(int32_t t);
 
  private:
-  GestureRecorder* gestureRecorder_;
+  GestureData* _data;
 
   int channel_{0};
 
   int duration_{0};
 
-  std::array<int32_t, 3> last_data_{0};
+  gesture_frame_t _last_data;
 
   int32_t start_time_{0};
 };
@@ -91,10 +98,10 @@ class GestureRecorder {
   void reset();
 
  private:
-  std::array<std::array<float, GestureVoice::MAX_DATA_SIZE>, 3> data_ = {{0}};
+  GestureData _data;
 
-  std::array<std::array<float, GestureVoice::MAX_DATA_SIZE>, 3> rand_data_ = {
-      {0}};
+  // std::array<std::array<float, MAX_DATA_SIZE>, 3>
+  //     rand_data_ = {{{{0}}, {{0}}, {{0}}}};
 
   bool is_recording_{false};
 

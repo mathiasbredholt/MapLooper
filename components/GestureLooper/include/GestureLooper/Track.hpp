@@ -47,8 +47,7 @@ class Pattern;
 
 class Track {
  public:
-
-  struct note_t {
+ struct note_t {
     int32_t time_stamp;
     int i;
     int j;

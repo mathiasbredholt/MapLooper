@@ -26,6 +26,8 @@ A clock module that interfaces with Ableton Link.
 
 #include "GestureLooper/Clock.hpp"
 
+#include "ableton/Link.hpp"
+
 #ifdef ESP_PLATFORM
 // Missing implementations for asio
 unsigned int if_nametoindex(const char *ifname) { return 0; }
@@ -35,57 +37,71 @@ char *if_indextoname(unsigned int ifindex, char *ifname) { return nullptr; }
 #endif
 
 namespace GestureLooper {
-Clock::Clock() : _link(DEFAULT_TEMPO) {
-  _link.enableStartStopSync(true);
-  _link.enable(true);
+Clock::Clock() : _link(new ableton::Link(DEFAULT_TEMPO)) {
+  reinterpret_cast<ableton::Link *>(_link)->enableStartStopSync(true);
+  reinterpret_cast<ableton::Link *>(_link)->enable(true);
   xTaskCreatePinnedToCore(
       [](void *user_data) {
         while (true) {
           ableton::link::platform::IoContext::poll();
-          vTaskDelay(1);
+          vTaskDelay(2);
         }
       },
       "Link", 8192, nullptr, 1, &_link_task_handle, 0);
 }
 
 void Clock::reset() {
-  auto state = _link.captureAudioSessionState();
-  state.requestBeatAtTime(0.0, _link.clock().micros(), q);
-  _link.commitAudioSessionState(state);
+  auto state =
+      reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
+  state.requestBeatAtTime(
+      0.0, reinterpret_cast<ableton::Link *>(_link)->clock().micros(), q);
+  reinterpret_cast<ableton::Link *>(_link)->commitAudioSessionState(state);
 }
 
 void Clock::start() {
-  auto state = _link.captureAudioSessionState();
-  state.setIsPlaying(true, _link.clock().micros());
-  _link.commitAudioSessionState(state);
+  auto state =
+      reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
+  state.setIsPlaying(
+      true, reinterpret_cast<ableton::Link *>(_link)->clock().micros());
+  reinterpret_cast<ableton::Link *>(_link)->commitAudioSessionState(state);
 }
 
 void Clock::stop() {
-  auto state = _link.captureAudioSessionState();
-  state.setIsPlaying(false, _link.clock().micros());
-  _link.commitAudioSessionState(state);
+  auto state =
+      reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
+  state.setIsPlaying(
+      false, reinterpret_cast<ableton::Link *>(_link)->clock().micros());
+  reinterpret_cast<ableton::Link *>(_link)->commitAudioSessionState(state);
 }
 
 int32_t Clock::get_ticks() const {
-  auto state = _link.captureAudioSessionState();
-  return std::round(state.beatAtTime(_link.clock().micros(), q) *
-                    TICKS_PER_QUARTER_NOTE);
+  auto state =
+      reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
+  return std::round(
+      state.beatAtTime(
+          reinterpret_cast<ableton::Link *>(_link)->clock().micros(), q) *
+      TICKS_PER_QUARTER_NOTE);
 }
 
 float Clock::get_tempo() const {
-  auto state = _link.captureAudioSessionState();
+  auto state =
+      reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
   return state.tempo();
 }
 
 void Clock::set_tempo(float tempo) {
-  auto state = _link.captureAudioSessionState();
-  state.setTempo(tempo, _link.clock().micros());
-  _link.commitAudioSessionState(state);
+  auto state =
+      reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
+  state.setTempo(tempo,
+                 reinterpret_cast<ableton::Link *>(_link)->clock().micros());
+  reinterpret_cast<ableton::Link *>(_link)->commitAudioSessionState(state);
 }
 
-bool Clock::is_linked() const { return _link.numPeers() > 0; }
+bool Clock::is_linked() const {
+  return reinterpret_cast<ableton::Link *>(_link)->numPeers() > 0;
+}
 
 void Clock::set_start_stop_callback(std::function<void(bool)> callback) {
-  _link.setStartStopCallback(callback);
+  reinterpret_cast<ableton::Link *>(_link)->setStartStopCallback(callback);
 }
 }  // namespace GestureLooper

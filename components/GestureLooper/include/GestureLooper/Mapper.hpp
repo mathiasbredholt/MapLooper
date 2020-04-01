@@ -35,16 +35,16 @@ libmapper interface
 namespace GestureLooper {
 class Mapper {
  public:
-  Mapper(Pattern* ptn, Sequencer* sequencer);
+  Mapper(mapper_device *dev, Pattern* ptn, Sequencer* sequencer);
 
   void update();
 
  private:
+  mapper_device *dev_;
+
   Pattern* ptn_;
 
   Sequencer* sequencer_;
-
-  mapper_device dev_;
 
   static void sig_pitch_handler(mapper_signal sig, mapper_id instance,
                                 const void* value, int count,

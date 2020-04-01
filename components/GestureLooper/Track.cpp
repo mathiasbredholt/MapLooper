@@ -66,6 +66,7 @@ void Track::render_tick(tick_t* tick) {
     note_t n;
     n.pitch = 60;
     n.velocity = 127;
+    n.note_off = tick->t + get_div() - 3;
     play_note(&n, tick);
   }
 }
@@ -77,8 +78,7 @@ void Track::play_note(note_t* n, tick_t* t) {
   midi::note_on(&msg, n->pitch, n->velocity, get_mpe_channel());
   midi::send(&msg, midi::ALL);
 
-  gesture_recorder.play(get_mpe_channel(), t->t,
-                        get_param(STEPS) * get_div());
+  gesture_recorder.play(get_mpe_channel(), t->t, get_div());
 
   off_event_t off_event;
   off_event.pitch = n->pitch;

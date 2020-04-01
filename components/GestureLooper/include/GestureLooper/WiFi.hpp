@@ -26,7 +26,16 @@ Library for interfacing with WiFi on ESP32
 
 #pragma once
 
-#ifdef ESP_PLATFORM
+#if defined __has_include
+#  if __has_include ("esp_idf_version.h")
+#    include "esp_idf_version.h"
+#    if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
+#      define ESP_IDF_V4 
+#    endif
+#  endif
+#endif
+
+#ifdef ESP_IDF_V4
 
 #include <cstring>
 
@@ -59,6 +68,6 @@ int num_saved_networks();
 esp_err_t save_wifi_network(wifi_config_t* wifi_config);
 
 }  // namespace wifi
-
 }  // namespace GestureLooper
+
 #endif
