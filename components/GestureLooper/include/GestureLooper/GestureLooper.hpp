@@ -46,7 +46,7 @@ class GestureLooper {
   static const int PREVIEW_TIME = 400;
   static const int LED_UPDATE_TIME = 10;
 
-  GestureLooper(mapper_device* libmapper_device);
+  GestureLooper(mpr_dev* libmapper_device);
 
   void update();
 

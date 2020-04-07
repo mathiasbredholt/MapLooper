@@ -1,18 +1,18 @@
 /*
 
-          ___  
-         (   ) 
-  .--.    | |  
- /    \   | |  
-;  ,-. '  | |  
-| |  | |  | |  
-| |  | |  | |  
-| |  | |  | |  
-| '  | |  | |  
-'  `-' |  | |  
- `.__. | (___) 
- ( `-' ;       
-  `.__.        
+          ___
+         (   )
+  .--.    | |
+ /    \   | |
+;  ,-. '  | |
+| |  | |  | |
+| |  | |  | |
+| |  | |  | |
+| '  | |  | |
+'  `-' |  | |
+ `.__. | (___)
+ ( `-' ;
+  `.__.
 
 Gesture Looper
 (c) Mathias Bredholt 2020
@@ -27,9 +27,10 @@ libmapper interface
 #include "GestureLooper/Mapper.hpp"
 
 namespace GestureLooper {
-Mapper::Mapper(mapper_device* dev, Pattern* ptn, Sequencer* sequencer)
+Mapper* m;
+Mapper::Mapper(mpr_dev* dev, Pattern* ptn, Sequencer* sequencer)
     : dev_(dev), ptn_(ptn), sequencer_(sequencer) {
-
+  m = this;
   float sig_min = 0.0f;
   float sig_max = 1.0f;
 
@@ -40,108 +41,102 @@ Mapper::Mapper(mapper_device* dev, Pattern* ptn, Sequencer* sequencer)
   float pitch_max = 24.0f;
 
   float tempo_min = 20.0f;
-  float tempo_max = 255.0f;
+  float tempo_max = 666.0f;
 
-  mapper_device_add_input_signal(*dev_, "/mpe/pitch", 1, 'f', 0, &pitch_min,
-                                 &pitch_max, sig_pitch_handler, this);
-  mapper_device_add_input_signal(*dev_, "/mpe/pressure", 1, 'f', 0, &sig_min,
-                                 &sig_max, sig_pressure_handler, this);
-  mapper_device_add_input_signal(*dev_, "/mpe/timbre", 1, 'f', 0, &sig_min,
-                                 &sig_max, sig_timbre_handler, this);
+  int num_inst = 1;
 
-  mapper_device_add_input_signal(*dev_, "/mod/pitch", 1, 'f', 0, &sig_min,
-                                 &sig_max, sig_mod_pitch_handler, this);
-  mapper_device_add_input_signal(*dev_, "/mod/pressure", 1, 'f', 0, &sig_min,
-                                 &sig_max, sig_mod_pressure_handler, this);
-  mapper_device_add_input_signal(*dev_, "/mod/timbre", 1, 'f', 0, &sig_min,
-                                 &sig_max, sig_mod_timbre_handler, this);
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/mpe/pitch", 1, MPR_FLT, 0, &pitch_min,
+              &pitch_max, &num_inst, sig_pitch_handler, MPR_SIG_UPDATE);
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/mpe/pressure", 1, MPR_FLT, 0, &sig_min,
+              &sig_max, &num_inst, sig_pressure_handler, MPR_SIG_UPDATE);
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/mpe/timbre", 1, MPR_FLT, 0, &sig_min,
+              &sig_max, &num_inst, sig_timbre_handler, MPR_SIG_UPDATE);
 
-  mapper_device_add_input_signal(*dev_, "/control/modulation", 1, 'f', 0,
-                                 &sig_min, &sig_max, sig_mod_handler, this);
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/mod/pitch", 1, MPR_FLT, 0, &sig_min,
+              &sig_max, &num_inst, sig_mod_pitch_handler, MPR_SIG_UPDATE);
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/mod/pressure", 1, MPR_FLT, 0, &sig_min,
+              &sig_max, &num_inst, sig_mod_pressure_handler, MPR_SIG_UPDATE);
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/mod/timbre", 1, MPR_FLT, 0, &sig_min,
+              &sig_max, &num_inst, sig_mod_timbre_handler, MPR_SIG_UPDATE);
 
-  mapper_device_add_input_signal(*dev_, "/control/record", 1, 'i', 0,
-                                 &sig_record_min, &sig_record_max,
-                                 sig_record_handler, this);
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/control/modulation", 1, MPR_FLT, 0, &sig_min,
+              &sig_max, &num_inst, sig_mod_handler, MPR_SIG_UPDATE);
 
-  mapper_device_add_input_signal(*dev_, "/control/tempo", 1, 'f', 0, &tempo_min,
-                                 &tempo_max, sig_tempo_handler, this);
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/control/record", 1, MPR_INT32, 0,
+              &sig_record_min, &sig_record_max, &num_inst, sig_record_handler,
+              MPR_SIG_UPDATE);
+
+  mpr_sig_new(*dev_, MPR_DIR_IN, "/control/tempo", 1, MPR_FLT, 0, &tempo_min,
+              &tempo_max, &num_inst, sig_tempo_handler, MPR_SIG_UPDATE);
 }
 
 void Mapper::update() {
-  int count = 10;
-  while (count-- && mapper_device_poll(*dev_, 0)) {
-  }
+  // int count = 10;
+  // while (count-- &&) {
+  // }
+  mpr_dev_poll(*dev_, 0);
 }
 
-void Mapper::sig_pitch_handler(mapper_signal sig, mapper_id instance,
-                               const void* value, int count,
-                               mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
+void Mapper::sig_pitch_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                               int length, mpr_type type, const void* value,
+                               mpr_time time) {
+  // printf("pitch: %f\n", *static_cast<const float*>(value));
   m->ptn_->active_track()->gesture_recorder.set_pitch(
       *static_cast<const float*>(value) / 24.0f);
 }
 
-void Mapper::sig_pressure_handler(mapper_signal sig, mapper_id instance,
-                                  const void* value, int count,
-                                  mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
+void Mapper::sig_pressure_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                  int length, mpr_type type, const void* value,
+                                  mpr_time time) {
   m->ptn_->active_track()->gesture_recorder.set_pressure(
       *static_cast<const float*>(value));
 }
 
-void Mapper::sig_timbre_handler(mapper_signal sig, mapper_id instance,
-                                const void* value, int count,
-                                mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
+void Mapper::sig_timbre_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                int length, mpr_type type, const void* value,
+                                mpr_time time) {
   m->ptn_->active_track()->gesture_recorder.set_timbre(
       *static_cast<const float*>(value));
 }
 
-void Mapper::sig_mod_pitch_handler(mapper_signal sig, mapper_id instance,
-                                   const void* value, int count,
-                                   mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
-  m->ptn_->active_track()
-      ->gesture_recorder.set_pitch_mod(*static_cast<const float*>(value));
+void Mapper::sig_mod_pitch_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                   int length, mpr_type type, const void* value,
+                                   mpr_time time) {
+  m->ptn_->active_track()->gesture_recorder.set_pitch_mod(
+      *static_cast<const float*>(value));
 }
 
-void Mapper::sig_mod_pressure_handler(mapper_signal sig, mapper_id instance,
-                                      const void* value, int count,
-                                      mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
-  m->ptn_->active_track()
-      ->gesture_recorder.set_pressure_mod(*static_cast<const float*>(value));
+void Mapper::sig_mod_pressure_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                      int length, mpr_type type,
+                                      const void* value, mpr_time time) {
+  m->ptn_->active_track()->gesture_recorder.set_pressure_mod(
+      *static_cast<const float*>(value));
 }
 
-void Mapper::sig_mod_timbre_handler(mapper_signal sig, mapper_id instance,
-                                    const void* value, int count,
-                                    mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
-  m->ptn_->active_track()
-      ->gesture_recorder.set_timbre_mod(*static_cast<const float*>(value));
+void Mapper::sig_mod_timbre_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                    int length, mpr_type type,
+                                    const void* value, mpr_time time) {
+  m->ptn_->active_track()->gesture_recorder.set_timbre_mod(
+      *static_cast<const float*>(value));
 }
 
-void Mapper::sig_mod_handler(mapper_signal sig, mapper_id instance,
-                             const void* value, int count,
-                             mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
-  m->ptn_->active_track()
-      ->gesture_recorder.set_modulation(*static_cast<const float*>(value));
+void Mapper::sig_mod_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                             int length, mpr_type type, const void* value,
+                             mpr_time time) {
+  m->ptn_->active_track()->gesture_recorder.set_modulation(
+      *static_cast<const float*>(value));
 }
 
-void Mapper::sig_record_handler(mapper_signal sig, mapper_id instance,
-                                const void* value, int count,
-                                mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
+void Mapper::sig_record_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                int length, mpr_type type, const void* value,
+                                mpr_time time) {
   int val = *static_cast<const int*>(value);
-  m->ptn_->active_track()
-      ->gesture_recorder.set_is_recording(val);
+  m->ptn_->active_track()->gesture_recorder.set_is_recording(val);
 }
 
-void Mapper::sig_tempo_handler(mapper_signal sig, mapper_id instance,
-                               const void* value, int count,
-                               mapper_timetag_t* tt) {
-  Mapper* m = reinterpret_cast<Mapper*>(mapper_signal_user_data(sig));
+void Mapper::sig_tempo_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                               int length, mpr_type type, const void* value,
+                               mpr_time time) {
   m->sequencer_->set_tempo(*static_cast<const float*>(value));
 }
 }  // namespace GestureLooper

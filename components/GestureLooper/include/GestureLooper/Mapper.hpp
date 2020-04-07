@@ -1,18 +1,18 @@
 /*
 
-          ___  
-         (   ) 
-  .--.    | |  
- /    \   | |  
-;  ,-. '  | |  
-| |  | |  | |  
-| |  | |  | |  
-| |  | |  | |  
-| '  | |  | |  
-'  `-' |  | |  
- `.__. | (___) 
- ( `-' ;       
-  `.__.        
+          ___
+         (   )
+  .--.    | |
+ /    \   | |
+;  ,-. '  | |
+| |  | |  | |
+| |  | |  | |
+| |  | |  | |
+| '  | |  | |
+'  `-' |  | |
+ `.__. | (___)
+ ( `-' ;
+  `.__.
 
 Gesture Looper
 (c) Mathias Bredholt 2020
@@ -27,59 +27,59 @@ libmapper interface
 #pragma once
 
 #include "GestureLooper/GestureRecorder.hpp"
-#include "GestureLooper/Sequencer.hpp"
 #include "GestureLooper/Pattern.hpp"
-#include "mapper/mapper.h"
+#include "GestureLooper/Sequencer.hpp"
 #include "GestureLooper/Util.hpp"
+#include "mpr/mpr.h"
 
 namespace GestureLooper {
 class Mapper {
  public:
-  Mapper(mapper_device *dev, Pattern* ptn, Sequencer* sequencer);
+  Mapper(mpr_dev* dev, Pattern* ptn, Sequencer* sequencer);
 
   void update();
 
  private:
-  mapper_device *dev_;
+  mpr_dev* dev_;
 
   Pattern* ptn_;
 
   Sequencer* sequencer_;
 
-  static void sig_pitch_handler(mapper_signal sig, mapper_id instance,
-                                const void* value, int count,
-                                mapper_timetag_t* tt);
+  static void sig_pitch_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                int length, mpr_type type, const void* value,
+                                mpr_time time);
 
-  static void sig_pressure_handler(mapper_signal sig, mapper_id instance,
-                                   const void* value, int count,
-                                   mapper_timetag_t* tt);
+  static void sig_pressure_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                   int length, mpr_type type, const void* value,
+                                   mpr_time time);
 
-  static void sig_timbre_handler(mapper_signal sig, mapper_id instance,
-                                 const void* value, int count,
-                                 mapper_timetag_t* tt);
+  static void sig_timbre_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                 int length, mpr_type type, const void* value,
+                                 mpr_time time);
 
-  static void sig_mod_pitch_handler(mapper_signal sig, mapper_id instance,
-                                    const void* value, int count,
-                                    mapper_timetag_t* tt);
+  static void sig_mod_pitch_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                    int length, mpr_type type,
+                                    const void* value, mpr_time time);
 
-  static void sig_mod_pressure_handler(mapper_signal sig, mapper_id instance,
-                                       const void* value, int count,
-                                       mapper_timetag_t* tt);
+  static void sig_mod_pressure_handler(mpr_sig sig, mpr_sig_evt evt,
+                                       mpr_id inst, int length, mpr_type type,
+                                       const void* value, mpr_time time);
 
-  static void sig_mod_timbre_handler(mapper_signal sig, mapper_id instance,
-                                     const void* value, int count,
-                                     mapper_timetag_t* tt);
+  static void sig_mod_timbre_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                     int length, mpr_type type,
+                                     const void* value, mpr_time time);
 
-  static void sig_mod_handler(mapper_signal sig, mapper_id instance,
-                              const void* value, int count,
-                              mapper_timetag_t* tt);
+  static void sig_mod_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                              int length, mpr_type type, const void* value,
+                              mpr_time time);
 
-  static void sig_record_handler(mapper_signal sig, mapper_id instance,
-                                 const void* value, int count,
-                                 mapper_timetag_t* tt);
+  static void sig_record_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                 int length, mpr_type type, const void* value,
+                                 mpr_time time);
 
-  static void sig_tempo_handler(mapper_signal sig, mapper_id instance,
-                                const void* value, int count,
-                                mapper_timetag_t* tt);
+  static void sig_tempo_handler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
+                                int length, mpr_type type, const void* value,
+                                mpr_time time);
 };
 }  // namespace GestureLooper

@@ -96,9 +96,9 @@ void Sequencer::update() {
   if (tick_function_.is_on_tick(ticks_)) {
     // midi_beat_clock_(ticks_);
 
-    if (ticks_ % 96 == 0) {
-      printf("ticks: %d, tempo: %d\n", ticks_, get_tempo());
-    }
+    // if (ticks_ % 96 == 0) {
+    //   printf("ticks: %d, tempo: %d\n", ticks_, get_tempo());
+    // }
 
     if (is_playing_ && ticks_ >= 0) {
       ptn_->update(ticks_);
