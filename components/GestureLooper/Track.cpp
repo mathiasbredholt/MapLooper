@@ -30,7 +30,7 @@ namespace GestureLooper {
 std::array<event_queue_t<off_event_t, MAX_EVENTS>, NUM_TRACKS>
     Track::off_event_queue;
 
-Track::Track() {}
+Track::Track() : voice(get_mpe_channel(), 768) {}
 
 bool Track::set_param_relative(param_name_t name, int val) {
   return params.set_param_relative(name, val);
@@ -40,51 +40,44 @@ void Track::set_param(param_name_t name, int val, bool clear) {
   params.params[name].set(val);
 }
 
-void Track::update(int32_t t, int32_t ptn_length) {
-  tick_t tick;
-  calc_tick(&tick, t);
-  render_tick(&tick);
-  gesture_recorder.update(t);
-
-  // Handle note off events
-  while (off_event_queue[id].size() &&
-         t >= off_event_queue[id].top().time_stamp) {
-    midi::message_t msg;
-    off_event_t e = off_event_queue[id].top();
-    midi::note_off(&msg, e.pitch, e.channel);
-    midi::send(&msg, midi::ALL);
-    off_event_queue[id].pop();
-  }
-}
-
-void Track::calc_tick(tick_t* tick, int32_t t) {
-  tick->t = t;
-}
-
-void Track::render_tick(tick_t* tick) {
-  if (tick->t == tick->t / get_div() * get_div()) {
+void Track::update(tick_t tick, int32_t ptn_length) {
+  if (tick == tick / get_div() * get_div()) {
     note_t n;
     n.pitch = 60;
     n.velocity = 127;
-    n.note_off = tick->t + get_div() - 3;
+    n.note_off = tick + get_div() - 3;
     play_note(&n, tick);
   }
+
+  voice.update(tick);
+  // tick_t tick;
+  // calc_tick(&tick, t);
+  // render_tick(&tick);
+
+  // // Handle note off events
+  // while (off_event_queue[id].size() &&
+  //        t >= off_event_queue[id].top().time_stamp) {
+  //   midi::message_t msg;
+  //   off_event_t e = off_event_queue[id].top();
+  //   midi::note_off(&msg, e.pitch, e.channel);
+  //   midi::send(&msg);
+  //   off_event_queue[id].pop();
+  // }
 }
 
 int Track::get_mpe_channel() { return clip<int>(id + 1, 1, 15); }
 
-void Track::play_note(note_t* n, tick_t* t) {
+void Track::play_note(note_t* n, tick_t t) {
   midi::message_t msg;
   midi::note_on(&msg, n->pitch, n->velocity, get_mpe_channel());
-  midi::send(&msg, midi::ALL);
+  midi::send(&msg);
 
-  gesture_recorder.play(get_mpe_channel(), t->t, get_div());
-
-  off_event_t off_event;
-  off_event.pitch = n->pitch;
-  off_event.time_stamp = n->note_off;
-  off_event.channel = get_mpe_channel();
-  off_event_queue[id].push(off_event);
+  // gesture_recorder.play(get_mpe_channel(), t->t, 768);
+  // off_event_t off_event;
+  // off_event.pitch = n->pitch;
+  // off_event.time_stamp = n->note_off;
+  // off_event.channel = get_mpe_channel();
+  // off_event_queue[id].push(off_event);
 }
 
 void Track::release_notes() {
@@ -92,7 +85,7 @@ void Track::release_notes() {
   while (off_event_queue[id].size()) {
     off_event_t e = off_event_queue[id].top();
     midi::note_off(&msg, e.pitch, e.channel);
-    midi::send(&msg, midi::ALL);
+    midi::send(&msg);
     off_event_queue[id].pop();
   }
 }

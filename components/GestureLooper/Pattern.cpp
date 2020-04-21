@@ -36,19 +36,13 @@ Pattern::Pattern() {
   clear();
 }
 
-void Pattern::update(int32_t t) {
-  if (is_finite() && t % get_length() == 0) {
-    reset_to(t / get_length() * get_length());
-  }
+void Pattern::update(tick_t tick) {
+  // if (is_finite() && t % get_length() == 0) {
+  //   reset_to(t / get_length() * get_length());
+  // }
   // Schedule tracks
-  for (Track& r : tracks) {
-    if (r.id == active_track_id) {
-      r.gesture_recorder.record_gestures(t, get_length());
-    }
-    
-    if (is_enabled(r)) {
-      r.update(t - reset_point, get_length());
-    }
+  for (Track& t : tracks) {
+    t.update(tick - reset_point, get_length());
   }
 }
 
@@ -78,7 +72,7 @@ void Pattern::release_all() {
   }
 }
 
-Track* Pattern::active_track() { return &tracks[active_track_id]; }
+Track& Pattern::active_track() { return tracks[active_track_id]; }
 
 int32_t Pattern::get_local_ticks(int32_t ticks) const {
   return ticks - reset_point;
@@ -91,7 +85,7 @@ bool Pattern::is_enabled(const Track& track) {
 bool Pattern::is_enabled(int id) { return !mute_states[id]; }
 
 int Pattern::get_seq_idx(int32_t ticks) {
-  return mod((get_local_ticks(ticks)) / active_track()->get_div(),
+  return mod((get_local_ticks(ticks)) / active_track().get_div(),
              get_param(STEPS));
 }
 
@@ -101,7 +95,7 @@ int Pattern::get_param(param_name_t name) {
   } else if (name == QUANTIZE) {
     return quantization.get();
   } else if (name < NUM_TRACK_PARAMS) {
-    return active_track()->get_param(name);
+    return active_track().get_param(name);
   } else {
     return 0;
   }

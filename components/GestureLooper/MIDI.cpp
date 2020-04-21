@@ -29,24 +29,24 @@ namespace GestureLooper {
 namespace midi {
 #ifdef ESP_PLATFORM
 const char TAG[] = "MIDI_IO";
-template <int BUF_SIZE>
-struct midi_buffer_t {
-  uint8_t data[BUF_SIZE] = {0};
-  int size = 0;
-};
+// template <int BUF_SIZE>
+// struct midi_buffer_t {
+//   uint8_t data[BUF_SIZE] = {0};
+//   int size = 0;
+// };
 
-class BleMidiBuffer {
- public:
-  static const int BUFFER_SIZE = 256;
-  void write(uint8_t *data, int n) {
-    if (buf.size + n > BUFFER_SIZE) return;
-    std::memcpy(buf.data + buf.size, data, n);
-    buf.size += n;
-  }
+// class BleMidiBuffer {
+//  public:
+//   static const int BUFFER_SIZE = 256;
+//   void write(uint8_t *data, int n) {
+//     if (buf.size + n > BUFFER_SIZE) return;
+//     std::memcpy(buf.data + buf.size, data, n);
+//     buf.size += n;
+//   }
 
-  void flush();
-  midi_buffer_t<BUFFER_SIZE> buf;
-};
+//   void flush();
+//   midi_buffer_t<BUFFER_SIZE> buf;
+// };
 
 
 void callback_ble_midi_message_received(uint8_t blemidi_port,
@@ -64,7 +64,7 @@ void init() {
   int status = blemidi_init(reinterpret_cast<void*>(callback_ble_midi_message_received));
 }
 
-void send(message_t *msg, midi_port_t port) {
+void send(message_t *msg) {
   blemidi_send_message(0, msg->data, msg->size);
 }
 

@@ -31,13 +31,15 @@ Class to represent Euclidean tracks with groove system
 #include <bitset>
 #include <climits>
 
+#include "esp_attr.h"
+
 #include "GestureLooper/EventQueue.hpp"
 #include "GestureLooper/Parameter.hpp"
 #include "GestureLooper/ParameterLayout.hpp"
 #include "GestureLooper/TrackParameters.hpp"
 #include "GestureLooper/MIDI.hpp"
 #include "GestureLooper/Util.hpp"
-#include "GestureLooper/GestureRecorder.hpp"
+#include "GestureLooper/GestureVoice.hpp"
 
 namespace GestureLooper {
 
@@ -58,10 +60,6 @@ class Track {
     bool is_top_note;
   };
 
-  struct tick_t {
-    int32_t t;
-  };
-
   static std::array<event_queue_t<off_event_t, MAX_EVENTS>, NUM_TRACKS>
       off_event_queue;
 
@@ -69,7 +67,7 @@ class Track {
 
   TrackParameters params;
 
-  GestureRecorder gesture_recorder;
+  GestureVoice voice;
 
   Track();
 
@@ -83,15 +81,11 @@ class Track {
 
   void clear_param(param_name_t name);
 
-  void update(int32_t t, int32_t ptn_length);
+  void update(tick_t tick, int32_t ptn_length);
 
   void release_notes();
 
-  void calc_tick(tick_t* tick, int32_t t);
-
-  void render_tick(tick_t* tick);
-
-  void play_note(note_t* n, tick_t* t);
+  void play_note(note_t* n, tick_t t);
 
   int get_param(param_name_t name) const;
 

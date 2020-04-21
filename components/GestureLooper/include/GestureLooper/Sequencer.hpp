@@ -31,6 +31,7 @@ Class to sequence patterns
 
 #include "GestureLooper/Clock.hpp"
 #include "GestureLooper/Pattern.hpp"
+#include "GestureLooper/GestureRecorder.hpp"
 
 namespace GestureLooper {
 
@@ -52,11 +53,11 @@ class Sequencer {
 
   int get_tempo();
 
-  int32_t get_ticks();
+  tick_t get_ticks();
 
   const Clock& get_clock();
 
-  std::function<void()> on_next_ptn_in_chain;
+  GestureRecorder* get_recorder();
 
  private:
   void start_callback_();
@@ -69,9 +70,11 @@ class Sequencer {
 
   int32_t last_active_sensing_{0};
 
-  int32_t ticks_;
+  tick_t _tick;
 
-  Pattern* ptn_;
+  Pattern* _ptn;
+
+  GestureRecorder _recorder;
 
   TickFunction tick_function_;
 

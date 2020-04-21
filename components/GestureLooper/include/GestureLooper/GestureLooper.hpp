@@ -30,6 +30,7 @@ Top level module
 
 #include "esp_heap_caps.h"
 
+#include "GestureLooper/Util.hpp"
 #include "GestureLooper/Mapper.hpp"
 #include "GestureLooper/Pattern.hpp"
 #include "GestureLooper/Sequencer.hpp"
@@ -39,7 +40,7 @@ namespace GestureLooper {
 class GestureLooper {
  public:
   void* operator new(size_t size) {
-    printf("Allocating %d bytes in SPIRAM..\n", size);
+    // printf("Allocating %d bytes in SPIRAM..\n", size);
     return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
   }
 
@@ -55,5 +56,6 @@ class GestureLooper {
   Sequencer sequencer;
 
   Mapper mapper;
+
 };    
 }  // namespace GestureLooper

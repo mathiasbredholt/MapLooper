@@ -34,6 +34,7 @@ A clock module that interfaces with Ableton Link.
 #ifndef ESP_PLATFORM
 #define LINK_PLATFORM_MACOSX
 #else
+#include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #endif
@@ -42,10 +43,8 @@ namespace GestureLooper {
 class Clock {
  public:
   static constexpr double TICKS_PER_QUARTER_NOTE = 96.0;
-  static constexpr double PPQN_BEAT_CLOCK = 24.0;
-  static constexpr int TICKS_PER_BAR = TICKS_PER_QUARTER_NOTE * 4;
   static constexpr float DEFAULT_TEMPO = 120.0f;
-  static constexpr double q = 4.0;
+  static const int q = 4;
 
   Clock();
 

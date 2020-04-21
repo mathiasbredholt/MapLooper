@@ -77,11 +77,9 @@ void pitch_bend(message_t *msg, int val, int channel);
 void pressure(message_t *msg, int val, int channel);
 void timbre(message_t *msg, int val, int channel);
 
-enum midi_port_t { ALL, DIN, USB };
-
 void init();
 
-void send(message_t* msg, midi_port_t port);
+void send(message_t* msg);
 
 void flush();
 

@@ -39,12 +39,12 @@ char *if_indextoname(unsigned int ifindex, char *ifname) { return nullptr; }
 namespace GestureLooper {
 Clock::Clock() : _link(new ableton::Link(DEFAULT_TEMPO)) {
   reinterpret_cast<ableton::Link *>(_link)->enableStartStopSync(true);
-  reinterpret_cast<ableton::Link *>(_link)->enable(true);
+  reinterpret_cast<ableton::Link*>(_link)->enable(true);
   xTaskCreatePinnedToCore(
       [](void *user_data) {
         while (true) {
           ableton::link::platform::IoContext::poll();
-          vTaskDelay(2);
+          portYIELD();
         }
       },
       "Link", 8192, nullptr, 1, &_link_task_handle, 0);
@@ -74,13 +74,12 @@ void Clock::stop() {
   reinterpret_cast<ableton::Link *>(_link)->commitAudioSessionState(state);
 }
 
-int32_t Clock::get_ticks() const {
+IRAM_ATTR int32_t Clock::get_ticks() const {
   auto state =
       reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
-  return std::round(
-      state.beatAtTime(
-          reinterpret_cast<ableton::Link *>(_link)->clock().micros(), q) *
-      TICKS_PER_QUARTER_NOTE);
+  return state.beatAtTime(
+             reinterpret_cast<ableton::Link *>(_link)->clock().micros(), q) *
+         TICKS_PER_QUARTER_NOTE;
 }
 
 float Clock::get_tempo() const {

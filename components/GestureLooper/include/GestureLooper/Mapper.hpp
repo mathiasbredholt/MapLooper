@@ -27,7 +27,6 @@ libmapper interface
 #pragma once
 
 #include "GestureLooper/GestureRecorder.hpp"
-#include "GestureLooper/Pattern.hpp"
 #include "GestureLooper/Sequencer.hpp"
 #include "GestureLooper/Util.hpp"
 #include "mpr/mpr.h"
@@ -35,14 +34,14 @@ libmapper interface
 namespace GestureLooper {
 class Mapper {
  public:
-  Mapper(mpr_dev* dev, Pattern* ptn, Sequencer* sequencer);
+  Mapper(mpr_dev* dev, GestureRecorder* recorder, Sequencer* sequencer);
 
   void update();
 
  private:
   mpr_dev* dev_;
 
-  Pattern* ptn_;
+  GestureRecorder* _recorder;
 
   Sequencer* sequencer_;
 

@@ -54,11 +54,11 @@ class Pattern {
 
   uint8_t active_track_id{0};
 
-  Track* active_track();
+  Track& active_track();
 
   void clear();
 
-  void update(int32_t t);
+  void update(tick_t tick);
 
   void reset_to(int32_t time_point);
 
@@ -84,7 +84,7 @@ class Pattern {
 
   static Track* track_to_copy;
 
-  int32_t reset_point{0};
+  tick_t reset_point{0};
 
   std::array<Track, NUM_TRACKS> tracks;
 

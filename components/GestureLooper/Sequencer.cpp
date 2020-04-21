@@ -1,18 +1,18 @@
 /*
 
-          ___  
-         (   ) 
-  .--.    | |  
- /    \   | |  
-;  ,-. '  | |  
-| |  | |  | |  
-| |  | |  | |  
-| |  | |  | |  
-| '  | |  | |  
-'  `-' |  | |  
- `.__. | (___) 
- ( `-' ;       
-  `.__.        
+          ___
+         (   )
+  .--.    | |
+ /    \   | |
+;  ,-. '  | |
+| |  | |  | |
+| |  | |  | |
+| |  | |  | |
+| '  | |  | |
+'  `-' |  | |
+ `.__. | (___)
+ ( `-' ;
+  `.__.
 
 Gesture Looper
 (c) Mathias Bredholt 2020
@@ -28,8 +28,7 @@ Class to sequence patterns
 
 namespace GestureLooper {
 
-Sequencer::Sequencer(Pattern* ptn)
-    : on_next_ptn_in_chain([]() {}), ptn_(ptn) {
+Sequencer::Sequencer(Pattern* ptn) : _ptn(ptn), _recorder(ptn) {
   clock_.set_start_stop_callback([this](bool is_playing) {
     is_playing_ = is_playing;
     if (is_playing) {
@@ -62,19 +61,20 @@ void Sequencer::start_callback_() {
 
   midi::message_t msg;
   midi::start(&msg);
-  midi::send(&msg, midi::ALL);;
+  midi::send(&msg);
+  ;
 }
 
 void Sequencer::stop_callback_() {
-  ptn_->release_all();
+  _ptn->release_all();
 
   midi::message_t msg;
   midi::stop(&msg);
-  midi::send(&msg, midi::ALL);
+  midi::send(&msg);
 
   // for (int i = 0; i < 16; ++i) {
   //   midi::all_sound_off(&msg, i);
-  //   midi::send(&msg, midi::ALL);
+  //   midi::send(&msg);
   // }
 }
 
@@ -83,28 +83,24 @@ void Sequencer::active_sensing_() {
   if (now - last_active_sensing_ > 300) {
     midi::message_t msg;
     midi::active_sensing(&msg);
-    midi::send(&msg, midi::ALL);
+    midi::send(&msg);
     last_active_sensing_ = now;
   }
 }
 
 void Sequencer::update() {
   // active_sensing_();
+  int32_t clk = clock_.get_ticks();
+  if (clk < 0) return;
+  
+  _tick = clk;
 
-  ticks_ = clock_.get_ticks();
-
-  if (tick_function_.is_on_tick(ticks_)) {
-    // midi_beat_clock_(ticks_);
-
-    // if (ticks_ % 96 == 0) {
-    //   printf("ticks: %d, tempo: %d\n", ticks_, get_tempo());
-    // }
-
-    if (is_playing_ && ticks_ >= 0) {
-      ptn_->update(ticks_);
+  if (tick_function_.is_on_tick(_tick)) {
+    // midi_beat_clock_(_tick);
+    if (is_playing_) {
+      _recorder.record(_tick);
+      _ptn->update(_tick);
     }
-
-    midi::flush();
   }
 }
 
@@ -112,13 +108,13 @@ void Sequencer::midi_beat_clock_(int32_t t) {
   if (mod(t, 4) == 0) {
     midi::message_t msg;
     midi::beat_clock(&msg);
-    midi::send(&msg, midi::ALL);
+    midi::send(&msg);
   }
 }
 
 const Clock& Sequencer::get_clock() { return clock_; }
 
-int32_t Sequencer::get_ticks() { return ticks_; }
+tick_t Sequencer::get_ticks() { return _tick; }
 
 bool Sequencer::is_playing() { return is_playing_; }
 
@@ -129,5 +125,7 @@ void Sequencer::set_tempo_relative(int val) {
 void Sequencer::set_tempo(int val) { clock_.set_tempo(val); }
 
 int Sequencer::get_tempo() { return clock_.get_tempo(); }
+
+GestureRecorder* Sequencer::get_recorder() { return &_recorder; }
 
 }  // namespace GestureLooper

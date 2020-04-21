@@ -30,13 +30,14 @@ namespace GestureLooper {
 
 GestureLooper::GestureLooper(mpr_dev* libmapper_device)
     : sequencer(&_ptn),
-      mapper(libmapper_device, &_ptn, &sequencer) {
+      mapper(libmapper_device, sequencer.get_recorder(), &sequencer) {
   midi::init();
 }
 
 void GestureLooper::update() {
   // mapper.update();
   sequencer.update();
+  midi::flush();
 }
 
 }  // namespace GestureLooper
