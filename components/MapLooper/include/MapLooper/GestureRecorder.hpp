@@ -1,9 +1,9 @@
 /*
-           __  
-  /\/\    / /  
- /    \  / /   
-/ /\/\ \/ /___ 
-\/    \/\____/ 
+           __
+  /\/\    / /
+ /    \  / /
+/ /\/\ \/ /___
+\/    \/\____/
 MapLooper
 (c) Mathias Bredholt 2020
 
@@ -20,38 +20,58 @@ Class to record gestures
 #include <array>
 #include <vector>
 
-#include "MapLooper/MIDI.hpp"
+#include "MapLooper/GestureVoice.hpp"
 #include "MapLooper/Pattern.hpp"
 #include "MapLooper/Util.hpp"
-#include "MapLooper/GestureVoice.hpp"
 
 namespace MapLooper {
 class GestureRecorder {
  public:
-  GestureRecorder(Pattern* ptn);
+  GestureRecorder(Pattern* pattern) : _pattern(pattern) {}
 
-  void record(tick_t tick);
+  void set_is_recording(bool enable) {
+    _is_recording = enable;
+  }
 
-  void set_is_recording(bool enable);
+  // void play(int channel, int32_t t, int32_t duration) {
+  //   // GestureVoice voice(channel, duration, t);
+  //   // voices_.push_back(voice);
+  // }
 
-  void set_pitch(int val);
+  void set_pitch(int val) {
+    _frame.pitch = val;
+  }
 
-  void set_pressure(int val);
+  void set_pressure(int val) {
+    _frame.pressure = val;
+  }
 
-  void set_timbre(int val);
+  void set_timbre(int val) {
+    _frame.timbre = val;
+  }
 
-  void set_pitch_mod(float val);
+  void set_pitch_mod(float val) {
+    rand_modulation_pitch_ = val;
+  }
 
-  void set_pressure_mod(float val);
+  void set_pressure_mod(float val) {
+    rand_modulation_pressure_ = val;
+  }
 
-  void set_timbre_mod(float val);
+  void set_timbre_mod(float val) {
+    rand_modulation_timbre_ = val;
+  }
 
-  void set_modulation(float val);
+  void set_modulation(float val) { rand_modulation_ = val; }
+
+  void record(tick_t tick) {
+    if (_is_recording) {
+      // _pattern->active_track().voice.record(tick, _frame);
+    }
+  }
 
  private:
-  mutex _mtx;
-
-  Pattern* _ptn;
+  Pattern* _pattern;
 
   bool _is_recording{false};
 

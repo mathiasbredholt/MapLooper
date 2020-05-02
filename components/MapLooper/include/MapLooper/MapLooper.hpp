@@ -1,9 +1,9 @@
 /*
-           __  
-  /\/\    / /  
- /    \  / /   
-/ /\/\ \/ /___ 
-\/    \/\____/ 
+           __
+  /\/\    / /
+ /    \  / /
+/ /\/\ \/ /___
+\/    \/\____/
 MapLooper
 (c) Mathias Bredholt 2020
 
@@ -18,10 +18,12 @@ Top level module
 
 #include <iostream>
 
-#include "MapLooper/Util.hpp"
+#include "MapLooper/GestureRecorder.hpp"
 #include "MapLooper/Mapper.hpp"
 #include "MapLooper/Pattern.hpp"
 #include "MapLooper/Sequencer.hpp"
+#include "MapLooper/Util.hpp"
+#include "MapLooper/midi/MidiConfig.hpp"
 
 namespace MapLooper {
 
@@ -30,15 +32,22 @@ class MapLooper {
   static const int PREVIEW_TIME = 400;
   static const int LED_UPDATE_TIME = 10;
 
-  MapLooper(mpr_dev* libmapper_device);
+  MapLooper(mpr_dev* mpr_device)
+      : pattern(&midiOut),
+        sequencer(&pattern, &midiOut),
+        recorder(&pattern),
+        mapper(mpr_device, &recorder, &sequencer) {}
 
-  void update();
+  void update() {
+    mapper.update();
+    sequencer.update();
+    midiOut.flush();
+  }
 
-  Pattern _ptn;
-
+  MidiOut midiOut;
+  Pattern pattern;
   Sequencer sequencer;
-
+  GestureRecorder recorder;
   Mapper mapper;
-
-};    
+};
 }  // namespace MapLooper

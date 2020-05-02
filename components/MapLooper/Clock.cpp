@@ -1,9 +1,9 @@
 /*
-           __  
-  /\/\    / /  
- /    \  / /   
-/ /\/\ \/ /___ 
-\/    \/\____/ 
+           __
+  /\/\    / /
+ /    \  / /
+/ /\/\ \/ /___
+\/    \/\____/
 MapLooper
 (c) Mathias Bredholt 2020
 
@@ -29,15 +29,15 @@ char *if_indextoname(unsigned int ifindex, char *ifname) { return nullptr; }
 namespace MapLooper {
 Clock::Clock() : _link(new ableton::Link(DEFAULT_TEMPO)) {
   reinterpret_cast<ableton::Link *>(_link)->enableStartStopSync(true);
-  reinterpret_cast<ableton::Link*>(_link)->enable(true);
-  xTaskCreatePinnedToCore(
+  reinterpret_cast<ableton::Link *>(_link)->enable(true);
+  xTaskCreate(
       [](void *user_data) {
         while (true) {
           ableton::link::platform::IoContext::poll();
           portYIELD();
         }
       },
-      "Link", 8192, nullptr, 1, &_link_task_handle, 0);
+      "Link", 8192, nullptr, 1, &_link_task_handle);
 }
 
 void Clock::reset() {

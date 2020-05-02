@@ -25,21 +25,39 @@ class TrackParameters {
  public:
   static const int MAX_STEP_SIZE = 32;
 
-  bool set_param_relative(param_name_t name, int val);
+  int get_param(param_name_t name) const {
+    if (name >= NUM_TRACK_PARAMS) {
+      return 0;
+    }
+    return params[name].get();
+  }
 
-  void set_param(param_name_t name, int val);
+  bool set_param_relative(param_name_t name, int val) {
+    return false;
+  }
 
-  int get_param(param_name_t name) const;
+  void set_param(param_name_t name, int val) {
+  }
 
-  void clear_param(param_name_t name);
+  void clear_param(param_name_t name) {
+    switch (name) {
+      case STEPS:
+        params[name].set(16);
+        break;
+      case VELOCITY:
+        params[name].set(100);
+        break;
+      case SUSTAIN:
+        params[name].set(127);
+        break;
+      case DIVISION:
+        params[name].set(0);
+        break;
+      default:
+        break;
+    }
+  }
 
   std::array<Parameter<uint8_t>, NUM_TRACK_PARAMS> params;
 };
-
-inline int TrackParameters::get_param(param_name_t name) const {
-  if (name >= NUM_TRACK_PARAMS) {
-    return 0;
-  }
-  return params[name].get();
-}
 }  // namespace MapLooper
