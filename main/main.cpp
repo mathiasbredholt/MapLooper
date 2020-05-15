@@ -28,7 +28,7 @@ void mapLooperTask(void* user_param) {
   MapLooper::MapLooper* app = new MapLooper::MapLooper(&dev);
   while (true) {
     app->update();
-    vTaskDelay(1);
+    portYIELD();
   }
 }
 

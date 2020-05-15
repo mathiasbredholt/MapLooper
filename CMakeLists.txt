@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
 set(external_dir ../../external)
-set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_examples_common external/libmapper_idf/components external/esp32-idf-blemidi/components)
+set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_examples_common)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(MapLooper)
