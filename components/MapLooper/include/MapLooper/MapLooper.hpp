@@ -18,12 +18,11 @@ Top level module
 
 #include <iostream>
 
-#include "MapLooper/GestureRecorder.hpp"
-#include "MapLooper/Mapper.hpp"
 #include "MapLooper/Pattern.hpp"
 #include "MapLooper/Sequencer.hpp"
 #include "MapLooper/Util.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
+#include "MapLooper/mpr/Mapper.hpp"
 
 namespace MapLooper {
 
@@ -33,10 +32,7 @@ class MapLooper {
   static const int LED_UPDATE_TIME = 10;
 
   MapLooper(mpr_dev* mpr_device)
-      : pattern(&midiOut),
-        sequencer(&pattern, &midiOut),
-        recorder(&pattern),
-        mapper(mpr_device, &recorder, &sequencer) {}
+      : sequencer(&midiOut), mapper(mpr_device, &sequencer) {}
 
   void update() {
     mapper.update();
@@ -45,9 +41,7 @@ class MapLooper {
   }
 
   MidiOut midiOut;
-  Pattern pattern;
   Sequencer sequencer;
-  GestureRecorder recorder;
   Mapper mapper;
 };
 }  // namespace MapLooper

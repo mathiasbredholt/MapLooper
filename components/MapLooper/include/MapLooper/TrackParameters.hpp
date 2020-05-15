@@ -17,7 +17,7 @@ Class to represent the parameters on a Track
 #pragma once
 
 #include "MapLooper/Parameter.hpp"
-#include "MapLooper/ParameterLayout.hpp"
+#include "MapLooper/Config.hpp"
 #include "MapLooper/Util.hpp"
 
 namespace MapLooper {
@@ -25,21 +25,21 @@ class TrackParameters {
  public:
   static const int MAX_STEP_SIZE = 32;
 
-  int get_param(param_name_t name) const {
+  int getParam(param_name_t name) const {
     if (name >= NUM_TRACK_PARAMS) {
       return 0;
     }
     return params[name].get();
   }
 
-  bool set_param_relative(param_name_t name, int val) {
+  bool setParamRelative(param_name_t name, int val) {
     return false;
   }
 
-  void set_param(param_name_t name, int val) {
+  void setParam(param_name_t name, int val) {
   }
 
-  void clear_param(param_name_t name) {
+  void clearParam(param_name_t name) {
     switch (name) {
       case STEPS:
         params[name].set(16);

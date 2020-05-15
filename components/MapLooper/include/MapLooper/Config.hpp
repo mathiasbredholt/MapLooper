@@ -1,9 +1,9 @@
 /*
-           __  
-  /\/\    / /  
- /    \  / /   
-/ /\/\ \/ /___ 
-\/    \/\____/ 
+           __
+  /\/\    / /
+ /    \  / /
+/ /\/\ \/ /___
+\/    \/\____/
 MapLooper
 (c) Mathias Bredholt 2020
 
@@ -17,9 +17,12 @@ Parameter settings
 #pragma once
 
 #include <array>
+#include <functional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace MapLooper {
-
 const int NUM_PATTERNS{1};
 const int NUM_TRACKS{1};
 const int NUM_TRACK_PARAMS{4};
@@ -40,5 +43,12 @@ extern const std::array<int, 16> DIVISION_PRESETS;
 extern const std::array<int, 16> REPEATS_TIME_PRESETS;
 
 extern const std::array<int, 16> PTN_LENGTH_PRESETS;
+
+typedef uint32_t Tick;
+
+typedef std::function<void(int trackId, const std::string& path, float value)>
+    SignalCallback;
+
+typedef std::unordered_map<std::string, float> SignalDataMap;
 
 }  // namespace MapLooper

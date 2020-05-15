@@ -64,7 +64,7 @@ void Clock::stop() {
   reinterpret_cast<ableton::Link *>(_link)->commitAudioSessionState(state);
 }
 
-IRAM_ATTR int32_t Clock::get_ticks() const {
+int32_t Clock::getTicks() const {
   auto state =
       reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
   return state.beatAtTime(
@@ -72,13 +72,13 @@ IRAM_ATTR int32_t Clock::get_ticks() const {
          TICKS_PER_QUARTER_NOTE;
 }
 
-float Clock::get_tempo() const {
+float Clock::getTempo() const {
   auto state =
       reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
   return state.tempo();
 }
 
-void Clock::set_tempo(float tempo) {
+void Clock::setTempo(float tempo) {
   auto state =
       reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
   state.setTempo(tempo,
@@ -86,11 +86,15 @@ void Clock::set_tempo(float tempo) {
   reinterpret_cast<ableton::Link *>(_link)->commitAudioSessionState(state);
 }
 
-bool Clock::is_linked() const {
+bool Clock::isLinked() const {
   return reinterpret_cast<ableton::Link *>(_link)->numPeers() > 0;
 }
 
-void Clock::set_start_stop_callback(std::function<void(bool)> callback) {
+void Clock::setStartStopCallback(std::function<void(bool)> callback) {
   reinterpret_cast<ableton::Link *>(_link)->setStartStopCallback(callback);
+}
+
+int Clock::getTickInterval() const {
+  return 60 / (getTempo() * TICKS_PER_QUARTER_NOTE); 
 }
 }  // namespace MapLooper

@@ -19,20 +19,15 @@ A clock module that interfaces with Ableton Link.
 #include <climits>
 #include <cstdint>
 #include <functional>
-#include <thread>
 
-#ifndef ESP_PLATFORM
-#define LINK_PLATFORM_MACOSX
-#else
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#endif
 
 namespace MapLooper {
 class Clock {
  public:
-  static constexpr double TICKS_PER_QUARTER_NOTE = 96.0;
+  static constexpr double TICKS_PER_QUARTER_NOTE = 48.0;
   static constexpr float DEFAULT_TEMPO = 120.0f;
   static const int q = 4;
 
@@ -44,15 +39,17 @@ class Clock {
 
   void stop();
 
-  int32_t get_ticks() const;
+  int32_t getTicks() const;
 
-  float get_tempo() const;
+  float getTempo() const;
 
-  void set_tempo(float val);
+  void setTempo(float val);
 
-  bool is_linked() const;
+  bool isLinked() const;
 
-  void set_start_stop_callback(std::function<void(bool)> callback);
+  void setStartStopCallback(std::function<void(bool)> callback);
+
+  int getTickInterval() const;
 
  private:
   void* _link;

@@ -16,20 +16,20 @@ Class to sequence patterns
 
 #pragma once
 
-#include <functional>
 #include <vector>
 
 #include "MapLooper/Clock.hpp"
-#include "MapLooper/GestureRecorder.hpp"
 #include "MapLooper/Pattern.hpp"
+#include "MapLooper/Util.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
+#include "esp_log.h"
 
 namespace MapLooper {
 class Sequencer {
  public:
-  Sequencer(Pattern* pattern, MidiOut* midiOut)
-      : _ptn(pattern), _midiOut(midiOut) {
-    clock_.set_start_stop_callback([this](bool isPlaying) {
+  Sequencer(MidiOut* midiOut) : _midiOut(midiOut), pattern(_midiOut) {
+    esp_log_level_set(_getTag(), ESP_LOG_WARN);
+    _clock.setStartStopCallback([this](bool isPlaying) {
       _isPlaying = isPlaying;
       if (isPlaying) {
         start_callback_();
@@ -41,28 +41,114 @@ class Sequencer {
   }
 
   void start() {
-    clock_.start();
-    if (!clock_.is_linked()) {
+    _clock.start();
+    if (!_clock.isLinked()) {
       _isPlaying = true;
       start_callback_();
     }
   }
 
   void stop() {
-    clock_.stop();
-    if (!clock_.is_linked()) {
+    _clock.stop();
+    if (!_clock.isLinked()) {
       _isPlaying = false;
       stop_callback_();
     }
   }
 
+  void update() {
+    // active_sensing_();
+    int32_t clk = _clock.getTicks();
+    if (clk < 0) return;
+
+    _tick = clk;
+
+    if (tick_function_.is_on_tick(_tick)) {
+      // midiBeatClock(_tick);
+      if (_isRecording) {
+        pattern.getActiveTrack().record(_tick, _values);
+      }
+
+      if (_isPlaying) {
+        pattern.update(_tick, _signalInfoMap);
+      }
+    }
+  }
+
+  const Clock& getClock() { return _clock; }
+
+  Tick getTicks() { return _tick; }
+
+  bool isPlaying() { return _isPlaying; }
+
+  void setTempoRelative(int val) {
+    _clock.setTempo(std::min(std::max<int>(_clock.getTempo() + val, 20), 255));
+  }
+
+  void setTempo(int val) { _clock.setTempo(val); }
+
+  int getTempo() { return _clock.getTempo(); }
+
+  void setRecording(bool enable) { _isRecording = enable; }
+
+  void setValue(const std::string& path, float value) {
+    _values[path] = value;
+    ESP_LOGI(_getTag(), "Recorded: '%s' : %f", path.c_str(), value);
+  }
+
+  void addSignal(const std::string& path, const SignalInfo& signalInfo) {
+    _signalInfoMap.emplace(path, signalInfo);
+    ESP_LOGI(_getTag(), "Added info for '%s'", path.c_str());
+  }
+
+  void setActiveTrack(int id) {
+    if (id >= 0 && id < NUM_TRACKS) {
+      pattern.setActiveTrack(id);
+    }
+  }
+
+  void setPlayState(int id, bool enable) {
+    if (id >= 0 && id < NUM_TRACKS) {
+      pattern.setActiveTrack(id);
+    }
+  }
+
+ private:
+  static const char* _getTag() { return "Sequencer"; };
+
+  bool _isRecording{false};
+
+  SignalInfoMap _signalInfoMap;
+
+  SignalDataMap _values;
+
+  MidiOut* _midiOut;
+
+  Pattern pattern;
+
+  int32_t last_active_sensing_{0};
+
+  Tick _tick;
+
+  TickFunction tick_function_;
+
+  Clock _clock;
+
+  bool _isPlaying = false;
+
+  void midiBeatClock(int32_t t) {
+    if (mod(t, 4) == 0) {
+      _midiOut->beat_clock();
+    }
+  }
+
   void start_callback_() {
-    clock_.reset();
+    _clock.reset();
     _midiOut->start();
   }
 
   void stop_callback_() {
-    _ptn->release_all();
+    pattern.releaseAll();
     _midiOut->stop();
 
     // for (int i = 0; i < 16; ++i) {
@@ -78,61 +164,6 @@ class Sequencer {
       last_active_sensing_ = now;
     }
   }
-
-  void update() {
-    // active_sensing_();
-    int32_t clk = clock_.get_ticks();
-    if (clk < 0) return;
-
-    _tick = clk;
-
-    if (tick_function_.is_on_tick(_tick)) {
-      // midi_beat_clock_(_tick);
-      if (_isPlaying) {
-        _recorder->record(_tick);
-        _ptn->update(_tick);
-      }
-    }
-  }
-
-  void midi_beat_clock_(int32_t t) {
-    if (mod(t, 4) == 0) {
-      _midiOut->beat_clock();
-    }
-  }
-
-  const Clock& get_clock() { return clock_; }
-
-  tick_t get_ticks() { return _tick; }
-
-  bool isPlaying() { return _isPlaying; }
-
-  void set_tempo_relative(int val) {
-    clock_.set_tempo(
-        std::min(std::max<int>(clock_.get_tempo() + val, 20), 255));
-  }
-
-  void set_tempo(int val) { clock_.set_tempo(val); }
-
-  int get_tempo() { return clock_.get_tempo(); }
-
- private:
-  Pattern* _ptn;
-
-  MidiOut* _midiOut;
-
-  int32_t last_active_sensing_{0};
-
-  tick_t _tick;
-
-
-  GestureRecorder* _recorder;
-
-  TickFunction tick_function_;
-
-  Clock clock_;
-
-  bool _isPlaying = false;
 };
 
 }  // namespace MapLooper

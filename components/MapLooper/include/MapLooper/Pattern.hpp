@@ -1,9 +1,9 @@
 /*
-           __  
-  /\/\    / /  
- /    \  / /   
-/ /\/\ \/ /___ 
-\/    \/\____/ 
+           __
+  /\/\    / /
+ /    \  / /
+/ /\/\ \/ /___
+\/    \/\____/
 MapLooper
 (c) Mathias Bredholt 2020
 
@@ -21,10 +21,9 @@ Class to contain a set of Tracks
 #include <bitset>
 #include <cstdint>
 
-#include "esp_heap_caps.h"
-
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Parameter.hpp"
+#include "MapLooper/SignalInfo.hpp"
 #include "MapLooper/Track.hpp"
 
 class Bank;
@@ -39,101 +38,91 @@ class Pattern {
 
  public:
   uint8_t id{0};
-  
-  uint8_t active_track_id{0};
+
+  uint8_t activeTrackID{0};
 
   Pattern(MidiOut* midiOut) : _midiOut(midiOut) {
     for (int i = 0; i < NUM_TRACKS; ++i) {
       tracks[i].id = i;
       tracks[i]._midiOut = _midiOut;
     }
-    mute_states[0] = false;
-    next_mute_states[0] = false;
+    playStates[0] = false;
     clear();
   }
 
-  void update(tick_t tick) {
-    // if (is_finite() && t % get_length() == 0) {
-    //   reset_to(t / get_length() * get_length());
+  void update(Tick tick, const SignalInfoMap& signalInfoMap) {
+    // if (isFinite() && t % getLength() == 0) {
+    //   resetTo(t / getLength() * getLength());
     // }
     // Schedule tracks
     for (Track& t : tracks) {
-      t.update(tick - reset_point, get_length());
+      if (isEnabled(t)) {
+        t.update(tick - resetPoint, getLength(), signalInfoMap);
+      }
     }
   }
 
-  void reset_to(int32_t time_point) {
-    reset_point = time_point;
+  void resetTo(int32_t time_point) {
+    resetPoint = time_point;
     for (Track& r : tracks) {
-      r.release_notes();
+      r.releaseNotes();
     }
   }
 
   void clear() {
-    mute_states.set();
-    next_mute_states.set();
     length.set(8);
     quantization.set(8);
     for (Track& r : tracks) {
       r.clear();
     }
-    mute_states[0] = false;
-    next_mute_states[0] = false;
-    active_track_id = 0;
+    playStates[0] = true;
+    activeTrackID = 0;
   }
 
-  void release_all() {
+  void releaseAll() {
     for (Track& r : tracks) {
-      r.release_notes();
+      r.releaseNotes();
     }
   }
 
-  Track& active_track() { return tracks[active_track_id]; }
+  Track& getActiveTrack() { return tracks[activeTrackID]; }
 
-  int32_t get_local_ticks(int32_t ticks) const {
-    return ticks - reset_point;
-  }
+  void setActiveTrack(int id) { activeTrackID = id; }
 
-  bool is_enabled(const Track& track) {
-    return !mute_states[track.id];
-  }
+  int32_t getLocalTicks(int32_t ticks) const { return ticks - resetPoint; }
 
-  bool is_enabled(int id) { return !mute_states[id]; }
+  bool isEnabled(const Track& track) { return playStates[track.id]; }
 
-  int get_seq_idx(int32_t ticks) {
-    return mod((get_local_ticks(ticks)) / active_track().get_div(),
-               get_param(STEPS));
-  }
+  bool isEnabled(int id) { return playStates[id]; }
 
-  int get_param(param_name_t name) {
+  void setPlayState(int id, bool state) { playStates[id] = state; };
+
+  int getParam(param_name_t name) {
     if (name == PATTERN_LENGTH) {
       return length.get();
     } else if (name == QUANTIZE) {
       return quantization.get();
     } else if (name < NUM_TRACK_PARAMS) {
-      return active_track().get_param(name);
+      return getActiveTrack().getParam(name);
     } else {
       return 0;
     }
   }
 
-  bool is_finite() { return length.get() != 8; }
+  bool isFinite() { return length.get() != 8; }
 
-  int get_length() { return PTN_LENGTH_PRESETS[length.get()]; }
+  // Tick getLength() { return PTN_LENGTH_PRESETS[length.get()]; }
+  Tick getLength() { return 768; }
 
-  int get_quantization() {
-    return PTN_LENGTH_PRESETS[quantization.get()];
-  }
+  Tick getQuantization() { return PTN_LENGTH_PRESETS[quantization.get()]; }
 
-  static Track* track_to_copy;
+  static Track* trackToCopy;
 
-  tick_t reset_point{0};
+  Tick resetPoint{0};
 
   std::array<Track, NUM_TRACKS> tracks;
 
-  std::bitset<NUM_TRACKS> mute_states{0xffff};
-
-  std::bitset<NUM_TRACKS> next_mute_states{0xffff};
+  std::bitset<NUM_TRACKS> playStates{0};
 
   Parameter<uint8_t> quantization;
 

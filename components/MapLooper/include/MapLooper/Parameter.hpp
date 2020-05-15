@@ -25,9 +25,7 @@ namespace MapLooper {
 template <typename T>
 class Parameter {
  public:
-  Parameter() {}
-
-  inline bool set_relative(int val, T min_val, T max_val, int step_size) {
+  inline bool setRelative(int val, T min_val, T max_val, int step_size) {
     val = std::min(std::max(val, -step_size), step_size);
     T new_val = std::min<int>(std::max<int>(m_value + val, min_val), max_val);
     bool is_changed = m_value != new_val;

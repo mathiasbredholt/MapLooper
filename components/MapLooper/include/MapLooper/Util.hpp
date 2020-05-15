@@ -1,9 +1,9 @@
 /*
-           __  
-  /\/\    / /  
- /    \  / /   
-/ /\/\ \/ /___ 
-\/    \/\____/ 
+           __
+  /\/\    / /
+ /    \  / /
+/ /\/\ \/ /___
+\/    \/\____/
 MapLooper
 (c) Mathias Bredholt 2020
 
@@ -21,27 +21,14 @@ Utility functions
 #include <cstdint>
 #include <cstdio>
 
-#ifndef ESP_PLATFORM
-#include <chrono>
-#include <mutex>
-#include <thread>
-using std::round;
-#else
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "freertos/semphr.h"
-#endif
+#include "freertos/task.h"
 
-#ifdef ESP_PLATFORM
 #define randint() esp_random()
-#else
-#define randint() rand()
-#endif
 
 namespace MapLooper {
-typedef uint32_t tick_t;
-
 inline float lerpf32(float a, float b, float x);
 void print_timestamp(int timeStamp);
 
@@ -144,13 +131,7 @@ inline uint32_t millis() {
 #endif
 }
 
-inline void sleep(uint32_t ms) {
-#ifdef ESP_PLATFORM
-  vTaskDelay(ms / portTICK_PERIOD_MS);
-#else
-  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-#endif
-}
+inline void sleep(uint32_t ms) { vTaskDelay(ms / portTICK_PERIOD_MS); }
 
 inline void print_timestamp(int time_stamp) {
   int ticks = time_stamp % 96;
@@ -159,22 +140,19 @@ inline void print_timestamp(int time_stamp) {
   printf("%d : %d : %d\n", bars, beats, ticks);
 }
 
-inline int div_round(const int n, const int d) {
+inline int divRound(const int n, const int d) {
   return (n < 0) ? ((n - d / 2) / d) : ((n + d / 2) / d);
 }
 
-#ifdef ESP_PLATFORM
 class mutex {
-  public:
-    mutex() { m = xSemaphoreCreateMutex(); }
+ public:
+  mutex() { m = xSemaphoreCreateMutex(); }
 
-    void lock() { xSemaphoreTake(m, portMAX_DELAY); }
+  void lock() { xSemaphoreTake(m, portMAX_DELAY); }
 
-    void unlock() { xSemaphoreGive(m); }
-  private:
-    SemaphoreHandle_t m;
+  void unlock() { xSemaphoreGive(m); }
+
+ private:
+  SemaphoreHandle_t m;
 };
-#else
-typedef std::mutex mutex;
-#endif
 }  // namespace MapLooper
