@@ -20,7 +20,8 @@ Class to sequence patterns
 
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Pattern.hpp"
-#include "MapLooper/Util.hpp"
+#include "MapLooper/SignalInfo.hpp"
+#include "MapLooper/Track.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
 #include "esp_log.h"
 
@@ -107,10 +108,8 @@ class Sequencer {
     }
   }
 
-  void setPlayState(int id, bool enable) {
-    if (id >= 0 && id < NUM_TRACKS) {
-      pattern.setActiveTrack(id);
-    }
+  void setPlayState(bool state) {
+    pattern.getActiveTrack().setEnabled(state); 
   }
 
  private:

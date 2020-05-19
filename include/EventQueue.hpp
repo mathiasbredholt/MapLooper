@@ -17,6 +17,7 @@ A priority queue implementation
 #include <array>
 #include <climits>
 #include <cstdio>
+#include <esp_log.h>
 
 #pragma once
 
@@ -46,7 +47,7 @@ class event_queue_t {
       }
       m_events[me] = e;
     } else {
-      printf("NOTE OFF QUEUE FULL\n");
+      ESP_LOGW("queue", "Queue full. Ignoring push.");
     }
   }
 

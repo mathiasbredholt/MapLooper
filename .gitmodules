@@ -1,9 +1,0 @@
-[submodule "components/link-idf"]
-	path = components/link-idf
-	url = https://github.com/mathiasbredholt/link-idf.git
-[submodule "components/blemidi-idf"]
-	path = components/blemidi-idf
-	url = https://github.com/mathiasbredholt/blemidi-idf.git
-[submodule "components/libmapper-idf"]
-	path = components/libmapper-idf
-	url = https://github.com/mathiasbredholt/libmapper-idf.git

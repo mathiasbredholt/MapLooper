@@ -51,15 +51,13 @@ class Mapper {
         },
         MPR_SIG_UPDATE);
 
-    int playStateMin = 0, playStateMax = NUM_TRACKS - 1;
+    int playStateMin = 0, playStateMax = 1;
     mpr_sig_new(
         *_dev, MPR_DIR_IN, "/control/playState", 1, MPR_INT32, 0, &playStateMin,
         &playStateMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
            const void* value, mpr_time time) {
-          for (int i = 0; i < length; ++i) {
-            _m->_sequencer->setPlayState(i, static_cast<const int*>(value)[i]);
-          }
+          _m->_sequencer->setPlayState(*static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
 

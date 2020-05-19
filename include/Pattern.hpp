@@ -41,22 +41,15 @@ class Pattern {
 
   uint8_t activeTrackID{0};
 
-  Pattern(MidiOut* midiOut) : _midiOut(midiOut) {
-    for (int i = 0; i < NUM_TRACKS; ++i) {
-      tracks[i].id = i;
-      tracks[i]._midiOut = _midiOut;
-    }
-    playStates[0] = false;
-    clear();
-  }
+  Pattern(MidiOut* midiOut) : _midiOut(midiOut) { clear(); }
 
   void update(Tick tick, const SignalInfoMap& signalInfoMap) {
-    // if (isFinite() && t % getLength() == 0) {
-    //   resetTo(t / getLength() * getLength());
-    // }
+    if (tick % getLength() == 0) {
+      resetTo(tick / getLength() * getLength());
+    }
     // Schedule tracks
     for (Track& t : tracks) {
-      if (isEnabled(t)) {
+      if (t.getEnabled()) {
         t.update(tick - resetPoint, getLength(), signalInfoMap);
       }
     }
@@ -70,12 +63,10 @@ class Pattern {
   }
 
   void clear() {
-    length.set(8);
-    quantization.set(8);
+    length = 384;
     for (Track& r : tracks) {
       r.clear();
     }
-    playStates[0] = true;
     activeTrackID = 0;
   }
 
@@ -91,42 +82,15 @@ class Pattern {
 
   int32_t getLocalTicks(int32_t ticks) const { return ticks - resetPoint; }
 
-  bool isEnabled(const Track& track) { return playStates[track.id]; }
-
-  bool isEnabled(int id) { return playStates[id]; }
-
-  void setPlayState(int id, bool state) { playStates[id] = state; };
-
-  int getParam(param_name_t name) {
-    if (name == PATTERN_LENGTH) {
-      return length.get();
-    } else if (name == QUANTIZE) {
-      return quantization.get();
-    } else if (name < NUM_TRACK_PARAMS) {
-      return getActiveTrack().getParam(name);
-    } else {
-      return 0;
-    }
-  }
-
-  bool isFinite() { return length.get() != 8; }
-
-  // Tick getLength() { return PTN_LENGTH_PRESETS[length.get()]; }
-  Tick getLength() { return 768; }
-
-  Tick getQuantization() { return PTN_LENGTH_PRESETS[quantization.get()]; }
+  Tick getLength() { return length; }
 
   static Track* trackToCopy;
 
   Tick resetPoint{0};
 
-  std::array<Track, NUM_TRACKS> tracks;
+  std::vector<Track> tracks;
 
-  std::bitset<NUM_TRACKS> playStates{0};
-
-  Parameter<uint8_t> quantization;
-
-  Parameter<uint8_t> length;
+  int length = {384};
 
   MidiOut* _midiOut;
 };

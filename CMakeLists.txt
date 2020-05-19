@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
-set(external_dir ../../external)
-set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_examples_common)
-include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(MapLooper)
+idf_component_register(SRCS "Clock.cpp"
+                       INCLUDE_DIRS "include"
+                       REQUIRES link-idf libmapper-idf)

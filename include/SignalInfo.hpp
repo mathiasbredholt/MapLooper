@@ -16,9 +16,14 @@ Class to contain information about a signal
 
 #pragma once
 
-#include "MapLooper/Config.hpp"
+#include <functional>
+#include <unordered_map>
 
 namespace MapLooper {
+
+typedef std::function<void(int trackId, const std::string& path, float value)>
+    SignalCallback;
+
 class SignalInfo {
  public:
   SignalInfo(SignalCallback callback, float minValue, float maxValue)
