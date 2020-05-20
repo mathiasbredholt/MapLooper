@@ -2,3 +2,6 @@
 
 # MapLooper
 Embedded Live-Looping Tools for Digital Musical Instruments
+
+## Example
+https://github.com/mathiasbredholt/MapLooper-example
