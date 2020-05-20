@@ -21,7 +21,6 @@ Class to represent Euclidean tracks with groove system
 #include "MapLooper/Config.hpp"
 #include "MapLooper/EventQueue.hpp"
 #include "MapLooper/Modulation.hpp"
-#include "MapLooper/Parameter.hpp"
 #include "MapLooper/SignalInfo.hpp"
 #include "MapLooper/Util.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"

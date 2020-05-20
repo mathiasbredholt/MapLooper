@@ -22,7 +22,6 @@ Class to contain a set of Tracks
 #include <cstdint>
 
 #include "MapLooper/Clock.hpp"
-#include "MapLooper/Parameter.hpp"
 #include "MapLooper/SignalInfo.hpp"
 #include "MapLooper/Track.hpp"
 
@@ -32,10 +31,6 @@ class Torso;
 
 namespace MapLooper {
 class Pattern {
-  friend class Bank;
-  friend class PatternController;
-  friend class Torso;
-
  public:
   uint8_t id{0};
 
@@ -47,7 +42,6 @@ class Pattern {
     if (tick % getLength() == 0) {
       resetTo(tick / getLength() * getLength());
     }
-    // Schedule tracks
     for (Track& t : tracks) {
       if (t.getEnabled()) {
         t.update(tick - resetPoint, getLength(), signalInfoMap);

@@ -27,55 +27,62 @@ libmapper interface
 namespace MapLooper {
 class Mapper {
  public:
-  Mapper(mpr_dev* dev, Sequencer* sequencer)
-      : _dev(dev), _sequencer(sequencer) {
-    _m = this;
+  inline static Mapper& getInstance() {
+    static Mapper mapper;
+    return mapper;
+  }
+
+  Mapper() {
+    dev = mpr_dev_new("MapLooper", 0);
 
     int sigRecordMin = 0, sigRecordMax = 1;
     mpr_sig_new(
-        *_dev, MPR_DIR_IN, "/control/record", 1, MPR_INT32, 0, &sigRecordMin,
+        dev, MPR_DIR_IN, "/control/record", 1, MPR_INT32, 0, &sigRecordMin,
         &sigRecordMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
            const void* value, mpr_time time) {
-          _m->_sequencer->setRecording(*static_cast<const int*>(value));
+          getInstance()._sequencer->setRecording(
+              *static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
 
     int sigTrackSelectMin = 0, sigTrackSelectMax = NUM_TRACKS - 1;
     mpr_sig_new(
-        *_dev, MPR_DIR_IN, "/control/trackSelect", 1, MPR_INT32, 0,
+        dev, MPR_DIR_IN, "/control/trackSelect", 1, MPR_INT32, 0,
         &sigTrackSelectMin, &sigTrackSelectMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
            const void* value, mpr_time time) {
-          _m->_sequencer->setActiveTrack(*static_cast<const int*>(value));
+          getInstance()._sequencer->setActiveTrack(
+              *static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
 
     int playStateMin = 0, playStateMax = 1;
     mpr_sig_new(
-        *_dev, MPR_DIR_IN, "/control/playState", 1, MPR_INT32, 0, &playStateMin,
+        dev, MPR_DIR_IN, "/control/playState", 1, MPR_INT32, 0, &playStateMin,
         &playStateMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
            const void* value, mpr_time time) {
-          _m->_sequencer->setPlayState(*static_cast<const int*>(value));
+          getInstance()._sequencer->setPlayState(
+              *static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
 
-    while (!mpr_dev_get_is_ready(*dev)) {
-      mpr_dev_poll(*dev, 25);
+    while (!mpr_dev_get_is_ready(dev)) {
+      mpr_dev_poll(dev, 25);
     }
   }
 
-  void update() { mpr_dev_poll(*_dev, 0); }
+  void update() { mpr_dev_poll(dev, 0); }
 
   void addSignal(const std::string& path, float min, float max,
                  SignalCallback signalCallback) {
     const SignalInfo signalInfo(signalCallback, min, max);
     mpr_sig_new(
-        *_dev, MPR_DIR_IN, path.c_str(), 1, MPR_FLT, 0, &min, &max, 0,
+        dev, MPR_DIR_IN, path.c_str(), 1, MPR_FLT, 0, &min, &max, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
            const void* value, mpr_time time) {
-          _m->_sequencer->setValue(
+          getInstance()._sequencer->setValue(
               mpr_obj_get_prop_as_str(sig, MPR_PROP_NAME, NULL),
               *static_cast<const float*>(value));
         },
@@ -83,11 +90,11 @@ class Mapper {
     _sequencer->addSignal(path, signalInfo);
   }
 
- private:
-  mpr_dev* _dev;
+  void setSequencer(Sequencer* sequencer) { _sequencer = sequencer; }
 
+ private:
   Sequencer* _sequencer;
 
-  inline static Mapper* _m;
+  mpr_dev dev;
 };
 }  // namespace MapLooper

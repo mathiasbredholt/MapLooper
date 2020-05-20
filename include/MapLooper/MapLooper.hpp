@@ -31,17 +31,18 @@ class MapLooper {
   static const int PREVIEW_TIME = 400;
   static const int LED_UPDATE_TIME = 10;
 
-  MapLooper(mpr_dev* mpr_device)
-      : sequencer(&midiOut), mapper(mpr_device, &sequencer) {}
+  MapLooper() : sequencer(&midiOut) {
+    Mapper::getInstance().setSequencer(&sequencer);
+  }
 
   void update() {
-    mapper.update();
+    Mapper::getInstance().update();
     sequencer.update();
     midiOut.flush();
   }
 
+ private:
   MidiOut midiOut;
   Sequencer sequencer;
-  Mapper mapper;
 };
 }  // namespace MapLooper
