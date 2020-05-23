@@ -68,9 +68,14 @@ class Mapper {
         },
         MPR_SIG_UPDATE);
 
-    while (!mpr_dev_get_is_ready(dev)) {
-      mpr_dev_poll(dev, 25);
-    }
+    xTaskCreate(
+        [](void* userParam) {
+          for (;;) {
+            getInstance().update();
+            portYIELD();
+          }
+        },
+        "mapper", 4096, nullptr, 3, nullptr);
   }
 
   void update() { mpr_dev_poll(dev, 0); }

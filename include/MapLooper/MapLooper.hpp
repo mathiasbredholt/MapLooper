@@ -20,6 +20,7 @@ Top level module
 
 #include "MapLooper/Pattern.hpp"
 #include "MapLooper/Sequencer.hpp"
+#include "MapLooper/TickTimer.hpp"
 #include "MapLooper/Util.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
 #include "MapLooper/mpr/Mapper.hpp"
@@ -31,18 +32,26 @@ class MapLooper {
   static const int PREVIEW_TIME = 400;
   static const int LED_UPDATE_TIME = 10;
 
-  MapLooper() : sequencer(&midiOut) {
+  MapLooper()
+      : sequencer(&midiOut),
+        tickTimer(
+            [](void* userParam) {
+              MapLooper* mapLooper = static_cast<MapLooper*>(userParam);
+              for (;;) {
+                ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+                mapLooper->sequencer.update();
+                mapLooper->midiOut.flush();
+              }
+            },
+            this) {
     Mapper::getInstance().setSequencer(&sequencer);
   }
 
-  void update() {
-    Mapper::getInstance().update();
-    sequencer.update();
-    midiOut.flush();
-  }
+  Mapper& getMapper() { return Mapper::getInstance(); }
 
  private:
   MidiOut midiOut;
   Sequencer sequencer;
+  TickTimer tickTimer;
 };
 }  // namespace MapLooper
