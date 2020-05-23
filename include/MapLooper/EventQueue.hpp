@@ -1,25 +1,29 @@
 /*
-           __  
-  /\/\    / /  
- /    \  / /   
-/ /\/\ \/ /___ 
-\/    \/\____/ 
-MapLooper
-(c) Mathias Bredholt 2020
+ MapLooper - Embedded Live-Looping Tools for Digital Musical Instruments
+ Copyright (C) 2020 Mathias Bredholt
 
-*-0-*-0-*-0-*-0-*-0-*-0-*-0-*-0-*-0-*
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-EventQueue.hpp
-A priority queue implementation
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 */
+
+#pragma once
 
 #include <array>
 #include <climits>
 #include <cstdio>
-#include <esp_log.h>
 
-#pragma once
+#include "esp_log.h"
 
 namespace MapLooper {
 
