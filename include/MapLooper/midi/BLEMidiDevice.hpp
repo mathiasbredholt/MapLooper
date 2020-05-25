@@ -1,16 +1,19 @@
 /*
-           __
-  /\/\    / /
- /    \  / /
-/ /\/\ \/ /___
-\/    \/\____/
-MapLooper
-(c) Mathias Bredholt 2020
+ MapLooper - Embedded Live-Looping Tools for Digital Musical Instruments
+ Copyright (C) 2020 Mathias Bredholt
 
-*-0-*-0-*-0-*-0-*-0-*-0-*-0-*-0-*-0-*
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-BLEMidiDevice.hpp
-BLEMidiDevice class
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 */
 
@@ -30,10 +33,8 @@ class BLEMidiDevice {
     blemidi_init(reinterpret_cast<void*>(_callback_ble_midi_message_received));
   }
 
-  void note_on(uint8_t pitch, uint8_t velocity,
-               uint8_t channel) {
-    uint8_t data[3] = {static_cast<uint8_t>(0x90 | channel), pitch,
-                             velocity};
+  void note_on(uint8_t pitch, uint8_t velocity, uint8_t channel) {
+    uint8_t data[3] = {static_cast<uint8_t>(0x90 | channel), pitch, velocity};
     blemidi_send_message(0, data, 3);
   }
 

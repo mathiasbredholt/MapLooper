@@ -1,17 +1,17 @@
 /*
  MapLooper - Embedded Live-Looping Tools for Digital Musical Instruments
  Copyright (C) 2020 Mathias Bredholt
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -27,11 +27,24 @@
 #include "MapLooper/Track.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
 #include "esp_log.h"
+#include "freertos/task.h"
 
 namespace MapLooper {
 class Sequencer {
  public:
-  Sequencer(MidiOut* midiOut) : _midiOut(midiOut), pattern(_midiOut) {
+  Sequencer(MidiOut* midiOut)
+      : _midiOut(midiOut),
+        pattern(_midiOut),
+        tickTimer(
+            [](void* userParam) {
+              Sequencer* sequencer = static_cast<Sequencer*>(userParam);
+              for (;;) {
+                ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+                sequencer->update();
+                sequencer->_midiOut->flush();
+              }
+            },
+            this) {
     esp_log_level_set(_getTag(), ESP_LOG_WARN);
     _clock.setStartStopCallback([this](bool isPlaying) {
       _isPlaying = isPlaying;
@@ -111,11 +124,13 @@ class Sequencer {
     }
   }
 
-  void setPlayState(bool state) {
-    pattern.getActiveTrack().setEnabled(state); 
-  }
+  void setPlayState(bool state) { pattern.getActiveTrack().setEnabled(state); }
 
  private:
+  MidiOut _midiOut;
+
+  TickTimer tickTimer;
+
   static const char* _getTag() { return "Sequencer"; };
 
   bool _isRecording{false};
@@ -123,8 +138,6 @@ class Sequencer {
   SignalInfoMap _signalInfoMap;
 
   SignalDataMap _values;
-
-  MidiOut* _midiOut;
 
   Pattern pattern;
 
@@ -140,18 +153,18 @@ class Sequencer {
 
   void midiBeatClock(int32_t t) {
     if (mod(t, 4) == 0) {
-      _midiOut->beat_clock();
+      _midiOut.beat_clock();
     }
   }
 
   void start_callback_() {
     _clock.reset();
-    _midiOut->start();
+    _midiOut.start();
   }
 
   void stop_callback_() {
     pattern.releaseAll();
-    _midiOut->stop();
+    _midiOut.stop();
 
     // for (int i = 0; i < 16; ++i) {
     //   midi::all_sound_off(&msg, i);
@@ -162,7 +175,7 @@ class Sequencer {
   void active_sensing_() {
     uint32_t now = millis();
     if (now - last_active_sensing_ > 300) {
-      _midiOut->active_sensing();
+      _midiOut.active_sensing();
       last_active_sensing_ = now;
     }
   }
