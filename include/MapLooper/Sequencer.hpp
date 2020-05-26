@@ -25,23 +25,24 @@
 #include "MapLooper/Scene.hpp"
 #include "MapLooper/Signal.hpp"
 #include "MapLooper/Track.hpp"
+#include "MapLooper/TickTimer.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 namespace MapLooper {
 class Sequencer {
  public:
-  Sequencer(MidiOut* midiOut)
-      : _midiOut(midiOut),
-        _scene(_midiOut),
+  Sequencer()
+      : _scene(&_midiOut),
         tickTimer(
             [](void* userParam) {
               Sequencer* sequencer = static_cast<Sequencer*>(userParam);
               for (;;) {
                 ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
                 sequencer->update();
-                sequencer->_midiOut->flush();
+                sequencer->_midiOut.flush();
               }
             },
             this) {

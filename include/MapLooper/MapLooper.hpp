@@ -19,13 +19,7 @@
 
 #pragma once
 
-#include <iostream>
-
-#include "MapLooper/Pattern.hpp"
 #include "MapLooper/Sequencer.hpp"
-#include "MapLooper/TickTimer.hpp"
-#include "MapLooper/Util.hpp"
-#include "MapLooper/midi/MidiConfig.hpp"
 #include "MapLooper/mpr/Mapper.hpp"
 
 namespace MapLooper {

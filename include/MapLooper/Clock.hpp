@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <functional>
 
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 namespace MapLooper {
