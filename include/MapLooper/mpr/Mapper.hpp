@@ -85,7 +85,7 @@ class Mapper {
 
   void addSignal(const std::string& path, float min, float max,
                  SignalCallback signalCallback) {
-    const SignalInfo signalInfo(signalCallback, min, max);
+    const Signal signal(signalCallback, min, max);
     mpr_sig_new(
         dev, MPR_DIR_IN, path.c_str(), 1, MPR_FLT, 0, &min, &max, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
@@ -95,7 +95,7 @@ class Mapper {
               *static_cast<const float*>(value));
         },
         MPR_SIG_UPDATE);
-    _sequencer->addSignal(path, signalInfo);
+    _sequencer->addSignal(path, signal);
   }
 
   void setSequencer(Sequencer* sequencer) { _sequencer = sequencer; }

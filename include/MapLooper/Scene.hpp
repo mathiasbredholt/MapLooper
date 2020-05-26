@@ -1,17 +1,17 @@
 /*
  MapLooper - Embedded Live-Looping Tools for Digital Musical Instruments
  Copyright (C) 2020 Mathias Bredholt
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -25,29 +25,25 @@
 #include <cstdint>
 
 #include "MapLooper/Clock.hpp"
-#include "MapLooper/SignalInfo.hpp"
+#include "MapLooper/Signal.hpp"
 #include "MapLooper/Track.hpp"
 
-class Bank;
-class PatternController;
-class Torso;
-
 namespace MapLooper {
-class Pattern {
+class Scene {
  public:
   uint8_t id{0};
 
   uint8_t activeTrackID{0};
 
-  Pattern(MidiOut* midiOut) : _midiOut(midiOut) { clear(); }
+  Scene(MidiOut* midiOut) : _midiOut(midiOut) { clear(); }
 
-  void update(Tick tick, const SignalInfoMap& signalInfoMap) {
+  void update(Tick tick, const SignalMap& signalMap) {
     if (tick % getLength() == 0) {
       resetTo(tick / getLength() * getLength());
     }
     for (Track& t : tracks) {
       if (t.getEnabled()) {
-        t.update(tick - resetPoint, getLength(), signalInfoMap);
+        t.update(tick - resetPoint, getLength(), signalMap);
       }
     }
   }

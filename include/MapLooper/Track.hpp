@@ -24,7 +24,7 @@
 #include "MapLooper/Config.hpp"
 #include "MapLooper/EventQueue.hpp"
 #include "MapLooper/Modulation.hpp"
-#include "MapLooper/SignalInfo.hpp"
+#include "MapLooper/Signal.hpp"
 #include "MapLooper/Util.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
 #include "esp_log.h"
@@ -65,7 +65,7 @@ class Track {
   }
 
   void update(Tick tick, Tick patternLength,
-              const SignalInfoMap& signalInfoMap) {
+              const SignalMap& signalMap) {
     _modulation.update(tick, patternLength);
 
     tick %= 768;
@@ -73,9 +73,9 @@ class Track {
 
     for (auto d : signalDataMap) {
       // ESP_LOGI(_getTag(), "'%s': %f", d.first.c_str(), d.second);
-      const SignalInfo& signalInfo = signalInfoMap.at(d.first);
-      signalInfo.getCallback()(
-          _id, d.first, _modulation.getModulation(d.second, tick, signalInfo));
+      const Signal& signal = signalMap.at(d.first);
+      signal.getCallback()(
+          _id, d.first, _modulation.getModulation(d.second, tick, signal));
     }
 
     // Handle note off events

@@ -27,9 +27,9 @@ namespace MapLooper {
 typedef std::function<void(int trackId, const std::string& path, float value)>
     SignalCallback;
 
-class SignalInfo {
+class Signal {
  public:
-  SignalInfo(SignalCallback callback, float minValue, float maxValue)
+  Signal(SignalCallback callback, float minValue, float maxValue)
       : _callback(callback), _minValue(minValue), _maxValue(maxValue) {}
 
   inline const SignalCallback& getCallback() const { return _callback; }
@@ -45,5 +45,5 @@ class SignalInfo {
   float _minValue, _maxValue;
 };  // namespace MapLooper
 
-typedef std::unordered_map<std::string, SignalInfo> SignalInfoMap;
+typedef std::unordered_map<std::string, Signal> SignalMap;
 }  // namespace MapLooper

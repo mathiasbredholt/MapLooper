@@ -23,8 +23,6 @@
 #include <cstdint>
 #include <functional>
 
-#include "esp_attr.h"
-#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 namespace MapLooper {
@@ -57,7 +55,6 @@ class Clock {
  private:
   void* _link;
 
-  TaskHandle_t _link_task_handle;
 };
 
 class TickFunction {

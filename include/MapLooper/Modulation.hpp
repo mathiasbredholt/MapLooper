@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "MapLooper/SignalInfo.hpp"
+#include "MapLooper/Signal.hpp"
 #include "MapLooper/Util.hpp"
 
 namespace MapLooper {
@@ -42,10 +42,10 @@ class Modulation {
   }
 
   inline float getModulation(float value, Tick tick,
-                             const SignalInfo& signalInfo) const {
+                             const Signal& signal) const {
     return clip<float>(
-        value + _getValue(tick) * signalInfo.getRange() * _amount,
-        signalInfo.getMin(), signalInfo.getMax());
+        value + _getValue(tick) * signal.getRange() * _amount,
+        signal.getMin(), signal.getMax());
   }
 
   void setVariation(float value) { _variation = value; }

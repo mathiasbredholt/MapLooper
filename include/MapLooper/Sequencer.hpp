@@ -22,8 +22,8 @@
 #include <vector>
 
 #include "MapLooper/Clock.hpp"
-#include "MapLooper/Pattern.hpp"
-#include "MapLooper/SignalInfo.hpp"
+#include "MapLooper/Scene.hpp"
+#include "MapLooper/Signal.hpp"
 #include "MapLooper/Track.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
 #include "esp_log.h"
@@ -34,7 +34,7 @@ class Sequencer {
  public:
   Sequencer(MidiOut* midiOut)
       : _midiOut(midiOut),
-        pattern(_midiOut),
+        _scene(_midiOut),
         tickTimer(
             [](void* userParam) {
               Sequencer* sequencer = static_cast<Sequencer*>(userParam);
@@ -83,11 +83,11 @@ class Sequencer {
     if (tick_function_.is_on_tick(_tick)) {
       // midiBeatClock(_tick);
       if (_isRecording) {
-        pattern.getActiveTrack().record(_tick, _values);
+        _scene.getActiveTrack().record(_tick, _values);
       }
 
       if (_isPlaying) {
-        pattern.update(_tick, _signalInfoMap);
+        _scene.update(_tick, _signalMap);
       }
     }
   }
@@ -113,21 +113,23 @@ class Sequencer {
     ESP_LOGI(_getTag(), "Recorded: '%s' : %f", path.c_str(), value);
   }
 
-  void addSignal(const std::string& path, const SignalInfo& signalInfo) {
-    _signalInfoMap.emplace(path, signalInfo);
+  void addSignal(const std::string& path, const Signal& signal) {
+    _signalMap.emplace(path, signal);
     ESP_LOGI(_getTag(), "Added info for '%s'", path.c_str());
   }
 
   void setActiveTrack(int id) {
     if (id >= 0 && id < NUM_TRACKS) {
-      pattern.setActiveTrack(id);
+      _scene.setActiveTrack(id);
     }
   }
 
-  void setPlayState(bool state) { pattern.getActiveTrack().setEnabled(state); }
+  void setPlayState(bool state) { _scene.getActiveTrack().setEnabled(state); }
 
  private:
   MidiOut _midiOut;
+
+  Scene _scene;
 
   TickTimer tickTimer;
 
@@ -135,11 +137,9 @@ class Sequencer {
 
   bool _isRecording{false};
 
-  SignalInfoMap _signalInfoMap;
+  SignalMap _signalMap;
 
   SignalDataMap _values;
-
-  Pattern pattern;
 
   int32_t last_active_sensing_{0};
 
@@ -163,7 +163,7 @@ class Sequencer {
   }
 
   void stop_callback_() {
-    pattern.releaseAll();
+    _scene.releaseAll();
     _midiOut.stop();
 
     // for (int i = 0; i < 16; ++i) {
