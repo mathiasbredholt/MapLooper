@@ -1,17 +1,17 @@
 /*
  MapLooper - Embedded Live-Looping Tools for Digital Musical Instruments
  Copyright (C) 2020 Mathias Bredholt
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -33,9 +33,11 @@ namespace MapLooper {
 
 const int MAX_EVENTS = 64;
 
-typedef std::unordered_map<std::string, float> SignalDataMap;
+typedef std::unordered_map<std::string, float> Frame;
+typedef std::array<Frame, 768> FrameArray;
 
-std::array<SignalDataMap, 768> _signalDataSequence;
+typedef std::array<event_queue_t<off_event_t, MAX_EVENTS>, NUM_TRACKS>
+    OffEventQueueType;
 
 class Track {
  public:
@@ -47,9 +49,6 @@ class Track {
     uint8_t channel;
   };
 
-  typedef std::array<event_queue_t<off_event_t, MAX_EVENTS>, NUM_TRACKS>
-      OffEventQueueType;
-
   Track(int _id, MidiOut* midiOut) : _midiOut(midiOut) {
     esp_log_level_set(_getTag(), ESP_LOG_WARN);
   }
@@ -60,22 +59,21 @@ class Track {
     return PRESETS[idx];
   }
 
-  void record(Tick tick, const SignalDataMap& values) {
-    _signalDataSequence[tick % 768] = values;
+  void record(Tick tick, const Frame& values) {
+    _frameArray[tick % 768] = values;
   }
 
-  void update(Tick tick, Tick patternLength,
-              const SignalMap& signalMap) {
+  void update(Tick tick, Tick patternLength, const SignalMap& signalMap) {
     _modulation.update(tick, patternLength);
 
     tick %= 768;
-    SignalDataMap signalDataMap = _signalDataSequence.at(tick);
+    Frame frame = _frameArray.at(tick);
 
-    for (auto d : signalDataMap) {
-      // ESP_LOGI(_getTag(), "'%s': %f", d.first.c_str(), d.second);
-      const Signal& signal = signalMap.at(d.first);
-      signal.getCallback()(
-          _id, d.first, _modulation.getModulation(d.second, tick, signal));
+    for (auto f : frame) {
+      // ESP_LOGI(_getTag(), "'%s': %f", f.first.c_str(), f.second);
+      const Signal& signal = signalMap.at(f.first);
+      signal.getCallback()(_id, f.first,
+                           _modulation.getModulation(f.second, tick, signal));
     }
 
     // Handle note off events
@@ -120,6 +118,8 @@ class Track {
 
  private:
   inline static const char* _getTag() { return "Track"; };
+
+  FrameArray _frameArray;
 
   Modulation _modulation;
 
