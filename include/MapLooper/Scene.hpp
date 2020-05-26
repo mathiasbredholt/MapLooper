@@ -32,40 +32,15 @@ namespace MapLooper {
 class Scene {
  public:
   uint8_t id{0};
-
   uint8_t activeTrackID{0};
 
-  Scene(MidiOut* midiOut) : _midiOut(midiOut) { clear(); }
+  Scene() { activeTrackID = 0; }
 
   void update(Tick tick, const SignalMap& signalMap) {
-    if (tick % getLength() == 0) {
-      resetTo(tick / getLength() * getLength());
-    }
     for (Track& t : tracks) {
       if (t.getEnabled()) {
-        t.update(tick - resetPoint, getLength(), signalMap);
+        t.update(tick, signalMap);
       }
-    }
-  }
-
-  void resetTo(int32_t time_point) {
-    resetPoint = time_point;
-    for (Track& r : tracks) {
-      r.releaseNotes();
-    }
-  }
-
-  void clear() {
-    length = 384;
-    for (Track& r : tracks) {
-      r.clear();
-    }
-    activeTrackID = 0;
-  }
-
-  void releaseAll() {
-    for (Track& r : tracks) {
-      r.releaseNotes();
     }
   }
 
@@ -73,18 +48,8 @@ class Scene {
 
   void setActiveTrack(int id) { activeTrackID = id; }
 
-  int32_t getLocalTicks(int32_t ticks) const { return ticks - resetPoint; }
-
-  Tick getLength() { return length; }
-
   static Track* trackToCopy;
 
-  Tick resetPoint{0};
-
   std::vector<Track> tracks;
-
-  int length = {384};
-
-  MidiOut* _midiOut;
 };
 }  // namespace MapLooper

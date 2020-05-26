@@ -24,8 +24,8 @@
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Scene.hpp"
 #include "MapLooper/Signal.hpp"
-#include "MapLooper/Track.hpp"
 #include "MapLooper/TickTimer.hpp"
+#include "MapLooper/Track.hpp"
 #include "MapLooper/midi/MidiConfig.hpp"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -35,8 +35,7 @@ namespace MapLooper {
 class Sequencer {
  public:
   Sequencer()
-      : _scene(&_midiOut),
-        tickTimer(
+      : tickTimer(
             [](void* userParam) {
               Sequencer* sequencer = static_cast<Sequencer*>(userParam);
               for (;;) {
@@ -164,7 +163,6 @@ class Sequencer {
   }
 
   void stop_callback_() {
-    _scene.releaseAll();
     _midiOut.stop();
 
     // for (int i = 0; i < 16; ++i) {

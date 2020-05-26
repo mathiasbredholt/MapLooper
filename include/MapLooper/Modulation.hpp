@@ -1,17 +1,17 @@
 /*
  MapLooper - Embedded Live-Looping Tools for Digital Musical Instruments
  Copyright (C) 2020 Mathias Bredholt
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -27,13 +27,13 @@ class Modulation {
  public:
   Modulation() {}
 
-  void update(Tick tick, int patternLength) {
+  void update(Tick tick, Tick trackLength) {
     if (tick % _div == 0) {
       const int idx = (tick / _div) % RESOLUTION;
       _updatePoint(idx);
       const int modulationLength = _div * RESOLUTION;
-      if (patternLength < modulationLength) {
-        int n = RESOLUTION - (modulationLength - patternLength) / _div;
+      if (trackLength < modulationLength) {
+        int n = RESOLUTION - (modulationLength - trackLength) / _div;
         for (int i = n; i < RESOLUTION; ++i) {
           _updatePoint(i);
         }
@@ -41,11 +41,9 @@ class Modulation {
     }
   }
 
-  inline float getModulation(float value, Tick tick,
-                             const Signal& signal) const {
-    return clip<float>(
-        value + _getValue(tick) * signal.getRange() * _amount,
-        signal.getMin(), signal.getMax());
+  inline float get(float value, Tick tick, const Signal& signal) const {
+    return clip<float>(value + _getValue(tick) * signal.getRange() * _amount,
+                       signal.getMin(), signal.getMax());
   }
 
   void setVariation(float value) { _variation = value; }

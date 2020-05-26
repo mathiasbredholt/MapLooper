@@ -21,6 +21,7 @@
 
 #include <unordered_map>
 
+#include "MapLooper/Clock.hpp"
 #include "MapLooper/Config.hpp"
 #include "MapLooper/EventQueue.hpp"
 #include "MapLooper/Modulation.hpp"
@@ -37,80 +38,30 @@ const int MAX_LENGTH = 768;
 typedef std::unordered_map<std::string, float> Frame;
 typedef std::array<Frame, MAX_LENGTH> FrameArray;
 
-typedef std::array<event_queue_t<off_event_t, MAX_EVENTS>, NUM_TRACKS>
-    OffEventQueueType;
-
 class Track {
  public:
-  struct note_t {
-    int32_t time_stamp;
-    int8_t pitch;
-    uint8_t velocity;
-    int32_t note_off;
-    uint8_t channel;
-  };
-
-  Track(int _id, MidiOut* midiOut) : _midiOut(midiOut) {
-    esp_log_level_set(_getTag(), ESP_LOG_WARN);
-  }
-
-  static int getDivisionPreset(int idx) {
-    static int PRESETS[] = {384, 192, 96,  48, 24, 12, 6, 6,
-                            128, 128, 128, 64, 32, 16, 8, 8};
-    return PRESETS[idx];
-  }
+  Track(int _id) { esp_log_level_set(_getTag(), ESP_LOG_WARN); }
 
   void record(Tick tick, const Frame& values) {
-    _frameArray[tick % MAX_LENGTH] = values;
+    _frameArray[tick % _length] = values;
   }
 
-  void update(Tick tick, Tick patternLength, const SignalMap& signalMap) {
-    _modulation.update(tick, patternLength);
+  void update(Tick tick, const SignalMap& signalMap) {
+    _modulation.update(tick, _length);
 
-    tick %= MAX_LENGTH;
+    tick %= _length;
     Frame frame = _frameArray.at(tick);
 
-    for (auto f : frame) {
-      // ESP_LOGI(_getTag(), "'%s': %f", f.first.c_str(), f.second);
+    for (const auto& f : frame) {
+      ESP_LOGI(_getTag(), "'%s': %f", f.first.c_str(), f.second);
       const Signal& signal = signalMap.at(f.first);
       signal.getCallback()(_id, f.first,
-                           _modulation.getModulation(f.second, tick, signal));
-    }
-
-    // Handle note off events
-    // while (getOffEventQueue()[_id].size() &&
-    //        tick >= getOffEventQueue()[_id].top().time_stamp) {
-    //   off_event_t e = getOffEventQueue()[_id].top();
-    //   _midiOut->note_off(e.pitch, e.channel);
-    //   getOffEventQueue()[_id].pop();
-    // }
-  }
-
-  int getMpeChannel() { return clip<int>(_id + 1, 1, 15); }
-
-  void playNote(note_t* n, Tick t) {
-    _midiOut->note_on(n->pitch, n->velocity, getMpeChannel());
-
-    off_event_t off_event;
-    off_event.pitch = n->pitch;
-    off_event.time_stamp = n->note_off;
-    off_event.channel = getMpeChannel();
-    getOffEventQueue()[_id].push(off_event);
-  }
-
-  void releaseNotes() {
-    while (getOffEventQueue()[_id].size()) {
-      off_event_t e = getOffEventQueue()[_id].top();
-      _midiOut->note_off(e.pitch, e.channel);
-      getOffEventQueue()[_id].pop();
+                           _modulation.get(f.second, tick, signal));
     }
   }
 
-  void clear() { releaseNotes(); }
-
-  static OffEventQueueType& getOffEventQueue() {
-    static OffEventQueueType offEventQueue;
-    return offEventQueue;
+  void setLength(float beats) {
+    _length = std::round(beats * Clock::TICKS_PER_QUARTER_NOTE);
   }
 
   void setEnabled(bool state) { _isEnabled = state; }
@@ -124,7 +75,7 @@ class Track {
 
   Modulation _modulation;
 
-  MidiOut* _midiOut;
+  int _length{MAX_LENGTH};
 
   uint8_t _id{0};
 
