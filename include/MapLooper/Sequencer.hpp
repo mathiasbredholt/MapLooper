@@ -140,7 +140,7 @@ class Sequencer {
 
   SignalMap _signalMap;
 
-  SignalDataMap _values;
+  Frame _values;
 
   int32_t last_active_sensing_{0};
 

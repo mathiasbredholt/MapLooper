@@ -32,9 +32,10 @@
 namespace MapLooper {
 
 const int MAX_EVENTS = 64;
+const int MAX_LENGTH = 768;
 
 typedef std::unordered_map<std::string, float> Frame;
-typedef std::array<Frame, 768> FrameArray;
+typedef std::array<Frame, MAX_LENGTH> FrameArray;
 
 typedef std::array<event_queue_t<off_event_t, MAX_EVENTS>, NUM_TRACKS>
     OffEventQueueType;
@@ -60,13 +61,13 @@ class Track {
   }
 
   void record(Tick tick, const Frame& values) {
-    _frameArray[tick % 768] = values;
+    _frameArray[tick % MAX_LENGTH] = values;
   }
 
   void update(Tick tick, Tick patternLength, const SignalMap& signalMap) {
     _modulation.update(tick, patternLength);
 
-    tick %= 768;
+    tick %= MAX_LENGTH;
     Frame frame = _frameArray.at(tick);
 
     for (auto f : frame) {
