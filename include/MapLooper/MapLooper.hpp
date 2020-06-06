@@ -77,7 +77,7 @@ class MapLooper {
   }
 
   void addSignal(const std::string& path, float min, float max,
-                 SignalCallback signalCallback) {
+                 Signal::Callback signalCallback) {
     const Signal signal(signalCallback, min, max);
     _createSignal(
         dev, MPR_DIR_IN, path.c_str(), 1, MPR_FLT, 0, &min, &max, 0,

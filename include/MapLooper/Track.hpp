@@ -45,7 +45,7 @@ class Track {
     _frameArray[tick % _length] = values;
   }
 
-  void IRAM_ATTR update(Tick tick, const SignalMap& signalMap) {
+  void IRAM_ATTR update(Tick tick, const Signal::Map& map) {
     _modulation.update(tick, _length);
 
     tick %= _length;
@@ -53,7 +53,7 @@ class Track {
 
     for (const auto& f : frame) {
       ESP_LOGI(_getTag(), "'%s': %f", f.first.c_str(), f.second);
-      const Signal& signal = signalMap.at(f.first);
+      const Signal& signal = map.at(f.first);
       signal.getCallback()(_id, f.first,
                            _modulation.get(f.second, tick, signal));
     }

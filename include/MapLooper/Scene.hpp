@@ -36,10 +36,10 @@ class Scene {
 
   Scene() { activeTrackID = 0; }
 
-  void update(Tick tick, const SignalMap& signalMap) {
+  void update(Tick tick, const Signal::Map& map) {
     for (Track& t : tracks) {
       if (t.getEnabled()) {
-        t.update(tick, signalMap);
+        t.update(tick, map);
       }
     }
   }

@@ -33,7 +33,7 @@ namespace MapLooper {
 class Sequencer {
  public:
   Sequencer()
-      : tickTimer(
+      : _tickTimer(
             [](void* userParam) {
               Sequencer* sequencer = static_cast<Sequencer*>(userParam);
               for (;;) {
@@ -72,13 +72,13 @@ class Sequencer {
     if (clk < 0) return;
     Tick tick = clk;
 
-    if (tick_function_.is_on_tick(tick)) {
+    if (_tickFunction.is_on_tick(tick)) {
       if (_isRecording) {
         _scene.getActiveTrack().record(tick, _values);
       }
 
       if (_isPlaying) {
-        _scene.update(tick, _signalMap);
+        _scene.update(tick, _map);
       }
     }
   }
@@ -103,7 +103,7 @@ class Sequencer {
   }
 
   void addSignal(const std::string& path, const Signal& signal) {
-    _signalMap.emplace(path, signal);
+    _map.emplace(path, signal);
     ESP_LOGI(_getTag(), "Added info for '%s'", path.c_str());
   }
 
@@ -122,9 +122,9 @@ class Sequencer {
 
   Scene _scene;
 
-  TickTimer tickTimer;
+  TickTimer _tickTimer;
 
-  SignalMap _signalMap;
+  Signal::Map _map;
 
   bool _isRecording{false};
 
@@ -132,7 +132,7 @@ class Sequencer {
 
   Frame _values;
 
-  TickFunction tick_function_;
+  TickFunction _tickFunction;
 
   void _startCallback() { _clock.reset(); }
 };
