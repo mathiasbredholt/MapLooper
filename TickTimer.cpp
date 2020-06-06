@@ -18,9 +18,10 @@
 */
 
 #include "MapLooper/TickTimer.hpp"
+#include "esp_attr.h"
 
 namespace MapLooper {
-void TickTimer::timer_group0_isr(void* userParam) {
+void IRAM_ATTR TickTimer::timer_group0_isr(void* userParam) {
   static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
   TIMERG0.int_clr_timers.t0 = 1;

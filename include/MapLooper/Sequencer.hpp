@@ -25,8 +25,6 @@
 #include "MapLooper/Scene.hpp"
 #include "MapLooper/Signal.hpp"
 #include "MapLooper/TickTimer.hpp"
-#include "MapLooper/Track.hpp"
-#include "MapLooper/midi/MidiConfig.hpp"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -41,7 +39,6 @@ class Sequencer {
               for (;;) {
                 ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
                 sequencer->update();
-                sequencer->_midiOut.flush();
               }
             },
             this) {
@@ -49,9 +46,7 @@ class Sequencer {
     _clock.setStartStopCallback([this](bool isPlaying) {
       _isPlaying = isPlaying;
       if (isPlaying) {
-        start_callback_();
-      } else {
-        stop_callback_();
+        _startCallback();
       }
     });
     start();
@@ -61,7 +56,7 @@ class Sequencer {
     _clock.start();
     if (!_clock.isLinked()) {
       _isPlaying = true;
-      start_callback_();
+      _startCallback();
     }
   }
 
@@ -69,32 +64,26 @@ class Sequencer {
     _clock.stop();
     if (!_clock.isLinked()) {
       _isPlaying = false;
-      stop_callback_();
     }
   }
 
   void update() {
-    // active_sensing_();
     int32_t clk = _clock.getTicks();
     if (clk < 0) return;
+    Tick tick = clk;
 
-    _tick = clk;
-
-    if (tick_function_.is_on_tick(_tick)) {
-      // midiBeatClock(_tick);
+    if (tick_function_.is_on_tick(tick)) {
       if (_isRecording) {
-        _scene.getActiveTrack().record(_tick, _values);
+        _scene.getActiveTrack().record(tick, _values);
       }
 
       if (_isPlaying) {
-        _scene.update(_tick, _signalMap);
+        _scene.update(tick, _signalMap);
       }
     }
   }
 
   const Clock& getClock() { return _clock; }
-
-  Tick getTicks() { return _tick; }
 
   bool isPlaying() { return _isPlaying; }
 
@@ -127,57 +116,25 @@ class Sequencer {
   void setPlayState(bool state) { _scene.getActiveTrack().setEnabled(state); }
 
  private:
-  MidiOut _midiOut;
+  static const char* _getTag() { return "Sequencer"; };
+
+  Clock _clock;
 
   Scene _scene;
 
   TickTimer tickTimer;
 
-  static const char* _getTag() { return "Sequencer"; };
+  SignalMap _signalMap;
 
   bool _isRecording{false};
 
-  SignalMap _signalMap;
+  bool _isPlaying = false;
 
   Frame _values;
 
-  int32_t last_active_sensing_{0};
-
-  Tick _tick;
-
   TickFunction tick_function_;
 
-  Clock _clock;
-
-  bool _isPlaying = false;
-
-  void midiBeatClock(int32_t t) {
-    if (mod(t, 4) == 0) {
-      _midiOut.beat_clock();
-    }
-  }
-
-  void start_callback_() {
-    _clock.reset();
-    _midiOut.start();
-  }
-
-  void stop_callback_() {
-    _midiOut.stop();
-
-    // for (int i = 0; i < 16; ++i) {
-    //   midi::all_sound_off(&msg, i);
-    //   midi::send(&msg);
-    // }
-  }
-
-  void active_sensing_() {
-    uint32_t now = millis();
-    if (now - last_active_sensing_ > 300) {
-      _midiOut.active_sensing();
-      last_active_sensing_ = now;
-    }
-  }
+  void _startCallback() { _clock.reset(); }
 };
 
 }  // namespace MapLooper

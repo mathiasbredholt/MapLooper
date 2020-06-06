@@ -23,12 +23,11 @@
 
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Config.hpp"
-#include "MapLooper/EventQueue.hpp"
 #include "MapLooper/Modulation.hpp"
 #include "MapLooper/Signal.hpp"
 #include "MapLooper/Util.hpp"
-#include "MapLooper/midi/MidiConfig.hpp"
 #include "esp_log.h"
+#include "esp_attr.h"
 
 namespace MapLooper {
 
@@ -46,7 +45,7 @@ class Track {
     _frameArray[tick % _length] = values;
   }
 
-  void update(Tick tick, const SignalMap& signalMap) {
+  void IRAM_ATTR update(Tick tick, const SignalMap& signalMap) {
     _modulation.update(tick, _length);
 
     tick %= _length;
