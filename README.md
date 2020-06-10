@@ -3,5 +3,12 @@
 # MapLooper
 Embedded Live-Looping Tools for Digital Musical Instruments
 
-### Example
-https://github.com/mathiasbredholt/MapLooper-example
+### Dependencies
+- [libmapper-idf](https://github.com/mathiasbredholt/libmapper-idf)
+- [link-idf](https://github.com/mathiasbredholt/link-idf)
+
+
+### Examples
+- [Basic example](https://github.com/mathiasbredholt/MapLooper-example)
+- [T-Stick example](https://github.com/mathiasbredholt/MapLooper-tstick)
+- [FAUST example](https://github.com/mathiasbredholt/MapLooper-faust)
