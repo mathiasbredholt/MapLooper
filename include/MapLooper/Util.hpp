@@ -32,9 +32,6 @@
 #define randint() esp_random()
 
 namespace MapLooper {
-inline float lerpf32(float a, float b, float x);
-void print_timestamp(int timeStamp);
-
 template <int MAX>
 int lerp8(int a, int b, int x) {
   return (a * (MAX - x) + b * x) / MAX;
@@ -64,6 +61,10 @@ inline int mod(int in, int hi) {
     c += hi;
   }
   return c;
+}
+
+inline float lerpf32(float a, float b, float x) {
+  return a * (1.0 - x) + b * x;
 }
 
 inline int wrap(int in, int lo, int hi) {
@@ -101,61 +102,16 @@ inline float fold(float in, float lo, float hi) {
   return c + lo;
 }
 
-inline float lerpf32(float a, float b, float x) {
-  return a * (1.0 - x) + b * x;
-}
-
 template <typename T>
 inline T clip(T x, T min, T max) {
   return std::min<T>(std::max<T>(x, min), max);
 }
 
-inline bool within_range(int num, int min, int max, int steps) {
-  if (max < steps) {
-    return num >= min && num <= max;
-  } else {
-    return !(num > (max % steps) && num < min);
-  }
-}
-
-#ifndef ESP_PLATFORM
-const std::chrono::system_clock::time_point startTime =
-    std::chrono::system_clock::now();
-#endif
-
-inline uint32_t millis() {
-#ifdef ESP_PLATFORM
-  return esp_timer_get_time() / 1000;
-#else
-  return static_cast<uint32_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now() - startTime)
-          .count());
-#endif
-}
+inline uint32_t millis() { return esp_timer_get_time() / 1000; }
 
 inline void sleep(uint32_t ms) { vTaskDelay(ms / portTICK_PERIOD_MS); }
-
-inline void print_timestamp(int time_stamp) {
-  int ticks = time_stamp % 96;
-  int beats = ((time_stamp / 96) % 4) + 1;
-  int bars = ((time_stamp / 96) / 4) + 1;
-  printf("%d : %d : %d\n", bars, beats, ticks);
-}
 
 inline int divRound(const int n, const int d) {
   return (n < 0) ? ((n - d / 2) / d) : ((n + d / 2) / d);
 }
-
-class mutex {
- public:
-  mutex() { m = xSemaphoreCreateMutex(); }
-
-  void lock() { xSemaphoreTake(m, portMAX_DELAY); }
-
-  void unlock() { xSemaphoreGive(m); }
-
- private:
-  SemaphoreHandle_t m;
-};
 }  // namespace MapLooper

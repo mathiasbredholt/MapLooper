@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include <unordered_map>
-
-#include "MapLooper/Clock.hpp"
 #include "MapLooper/Config.hpp"
 #include "MapLooper/Modulation.hpp"
 #include "MapLooper/Signal.hpp"

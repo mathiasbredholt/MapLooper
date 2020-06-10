@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <vector>
-
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Scene.hpp"
 #include "MapLooper/Signal.hpp"
@@ -76,7 +74,6 @@ class Sequencer {
       if (_isRecording) {
         _scene.getActiveTrack().record(tick, _values);
       }
-
       if (_isPlaying) {
         _scene.update(tick, _map);
       }
