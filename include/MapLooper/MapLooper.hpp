@@ -91,6 +91,10 @@ class MapLooper {
     _sequencer.addSignal(path, signal);
   }
 
+  mpr_dev getMapperDevice() {
+    return dev;
+  }
+
  private:
   void _createSignal(mpr_dev parent, mpr_dir dir, const char* name, int len,
                      mpr_type type, const char* unit, const void* min,
