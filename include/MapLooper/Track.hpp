@@ -42,7 +42,7 @@ class Track {
     _frameArray[tick % _length] = values;
   }
 
-  void IRAM_ATTR update(Tick tick, const Signal::Map& map) {
+  void update(Tick tick, const Signal::Map& map) {
     _modulation.update(tick, _length);
 
     tick %= _length;
