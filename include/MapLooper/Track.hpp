@@ -23,41 +23,46 @@
 #include "MapLooper/Modulation.hpp"
 #include "MapLooper/Signal.hpp"
 #include "MapLooper/Util.hpp"
-#include "esp_log.h"
 #include "esp_attr.h"
+#include "esp_log.h"
 
 namespace MapLooper {
 
-const int MAX_EVENTS = 64;
-const int MAX_LENGTH = 768;
+const int MAX_LENGTH = 384;
 
 typedef std::unordered_map<std::string, float> Frame;
 typedef std::array<Frame, MAX_LENGTH> FrameArray;
 
 class Track {
  public:
-  Track(int _id) { esp_log_level_set(_getTag(), ESP_LOG_WARN); }
+  Track(int _id) {
+    esp_log_level_set(_getTag(), ESP_LOG_WARN);
+  }
 
   void record(Tick tick, const Frame& values) {
     _frameArray[tick % _length] = values;
   }
 
-  void IRAM_ATTR update(Tick tick, const Signal::Map& map) {
-    _modulation.update(tick, _length);
+  void update(Tick tick, Signal::Map& map) {
+    // _modulation.update(tick, _length);
 
     tick %= _length;
     Frame frame = _frameArray.at(tick);
 
     for (const auto& f : frame) {
       ESP_LOGI(_getTag(), "'%s': %f", f.first.c_str(), f.second);
-      const Signal& signal = map.at(f.first);
-      signal.getCallback()(_id, f.first,
-                           _modulation.get(f.second, tick, signal));
+      Signal& signal = map.at(f.first);
+      signal.update(f.second);
+      // signal.getCallback()(_id, f.first,
+      //                      _modulation.get(f.second, tick, signal));
+      signal.getCallback()(_id, f.first, f.second);
     }
   }
 
   void setLength(float beats) {
-    _length = std::round(beats * Clock::TICKS_PER_QUARTER_NOTE);
+    _length = std::min<float>(
+        std::max<float>(std::round(beats * Clock::TICKS_PER_QUARTER_NOTE), 0),
+        MAX_LENGTH);
   }
 
   void setEnabled(bool state) { _isEnabled = state; }
@@ -69,7 +74,7 @@ class Track {
 
   FrameArray _frameArray;
 
-  Modulation _modulation;
+  // Modulation _modulation;
 
   int _length{MAX_LENGTH};
 

@@ -23,6 +23,7 @@
 #include <array>
 #include <bitset>
 #include <cstdint>
+#include <memory>
 
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Signal.hpp"
@@ -34,22 +35,35 @@ class Scene {
   uint8_t id{0};
   uint8_t activeTrackID{0};
 
-  Scene() { activeTrackID = 0; }
+  Scene() {
+    ESP_LOGI(_getTag(), "Adding track, %d bytes", sizeof(Track));
+    addTrack();
+  }
 
-  void update(Tick tick, const Signal::Map& map) {
-    for (Track& t : tracks) {
-      if (t.getEnabled()) {
-        t.update(tick, map);
+  void update(Tick tick, Signal::Map& map) {
+    for (auto& t : tracks) {
+      if (t->getEnabled()) {
+        t->update(tick, map);
       }
     }
   }
 
-  Track& getActiveTrack() { return tracks[activeTrackID]; }
+  void addTrack() {
+    tracks.push_back(std::unique_ptr<Track>(new Track(numTracks)));
+    ++numTracks;
+  }
+
+  Track* getActiveTrack() { return tracks[activeTrackID].get(); }
 
   void setActiveTrack(int id) { activeTrackID = id; }
 
   static Track* trackToCopy;
 
-  std::vector<Track> tracks;
+  std::vector<std::unique_ptr<Track>> tracks;
+
+private:
+  static const char* _getTag() { return "Scene"; };
+
+  int numTracks;
 };
 }  // namespace MapLooper

@@ -30,6 +30,7 @@ class MapLooper {
   static const int LED_UPDATE_TIME = 10;
 
   MapLooper() {
+    ESP_LOGI(_getTag(), "Creating device...");
     dev = mpr_dev_new("MapLooper", 0);
 
     int sigRecordMin = 0, sigRecordMax = 1;
@@ -38,8 +39,9 @@ class MapLooper {
         &sigRecordMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
            const void* value, mpr_time time) {
-          _getInstanceFromSignal(sig)->_sequencer.setRecording(
-              *static_cast<const int*>(value));
+          MapLooper* mapLooper = (MapLooper*)mpr_obj_get_prop_as_ptr(
+              (mpr_obj)sig, MPR_PROP_DATA, 0);
+          mapLooper->_sequencer.setRecording(*static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
 
@@ -49,8 +51,9 @@ class MapLooper {
         &sigTrackSelectMin, &sigTrackSelectMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
            const void* value, mpr_time time) {
-          _getInstanceFromSignal(sig)->_sequencer.setActiveTrack(
-              *static_cast<const int*>(value));
+          MapLooper* mapLooper = (MapLooper*)mpr_obj_get_prop_as_ptr(
+              (mpr_obj)sig, MPR_PROP_DATA, 0);
+          mapLooper->_sequencer.setActiveTrack(*static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
 
@@ -60,57 +63,59 @@ class MapLooper {
         &playStateMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
            const void* value, mpr_time time) {
-          _getInstanceFromSignal(sig)->_sequencer.setPlayState(
-              *static_cast<const int*>(value));
+          MapLooper* mapLooper = (MapLooper*)mpr_obj_get_prop_as_ptr(
+              (mpr_obj)sig, MPR_PROP_DATA, 0);
+          mapLooper->_sequencer.setPlayState(*static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
 
-    xTaskCreate(
+    float lengthMin = 1, lengthMax = 768;
+    _createSignal(
+        dev, MPR_DIR_IN, "/control/length", 1, MPR_FLT, 0, &lengthMin,
+        &lengthMax, 0,
+        [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
+           const void* value, mpr_time time) {
+          MapLooper* mapLooper = (MapLooper*)mpr_obj_get_prop_as_ptr(
+              (mpr_obj)sig, MPR_PROP_DATA, 0);
+          mapLooper->_sequencer.setLength(*static_cast<const float*>(value));
+        },
+        MPR_SIG_UPDATE);
+
+    xTaskCreatePinnedToCore(
         [](void* userParam) {
           MapLooper* mapLooper = static_cast<MapLooper*>(userParam);
           for (;;) {
             mpr_dev_poll(mapLooper->dev, 0);
-            portYIELD();
+            vTaskDelay(1);
           }
         },
-        "mapper", 4096, this, 3, nullptr);
+        "mapper", 16384, this, 3, nullptr, 1);
   }
 
   void addSignal(const std::string& path, float min, float max,
                  Signal::Callback signalCallback) {
-    const Signal signal(signalCallback, min, max);
-    _createSignal(
-        dev, MPR_DIR_IN, path.c_str(), 1, MPR_FLT, 0, &min, &max, 0,
-        [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
-           const void* value, mpr_time time) {
-          _getInstanceFromSignal(sig)->_sequencer.setValue(
-              mpr_obj_get_prop_as_str(sig, MPR_PROP_NAME, NULL),
-              *static_cast<const float*>(value));
-        },
-        MPR_SIG_UPDATE);
-    _sequencer.addSignal(path, signal);
+    _sequencer.addSignal(path, min, max, signalCallback, dev);
   }
 
-  mpr_dev getMapperDevice() {
-    return dev;
-  }
+  mpr_dev getMapperDevice() { return dev; }
+
+  Sequencer& getSequencer() { return _sequencer; }
 
  private:
+  static const char* _getTag() { return "MapLooper"; }
+
   void _createSignal(mpr_dev parent, mpr_dir dir, const char* name, int len,
                      mpr_type type, const char* unit, const void* min,
                      const void* max, int* num_inst, mpr_sig_handler* handler,
                      int events) {
     mpr_sig newSignal = mpr_sig_new(parent, dir, name, len, type, unit, min,
                                     max, num_inst, handler, events);
-    mpr_obj_set_prop(newSignal, MPR_PROP_SIG, "parent", 1, MPR_PTR, this, 0);
-  }
-
-  static MapLooper* _getInstanceFromSignal(mpr_sig sig) {
-    return static_cast<MapLooper*>(const_cast<void*>(
-        mpr_obj_get_prop_as_ptr(sig, MPR_PROP_SIG, "parent")));
+    mpr_obj_set_prop((mpr_obj)newSignal, MPR_PROP_DATA, NULL, 1, MPR_PTR, this,
+                     0);
   }
 
   mpr_dev dev;
   Sequencer _sequencer;
+  std::unordered_map<std::string, mpr_sig> _outputSignals;
 };
 }  // namespace MapLooper

@@ -36,11 +36,12 @@ class Sequencer {
               Sequencer* sequencer = static_cast<Sequencer*>(userParam);
               for (;;) {
                 ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+                // printf("%p\n", sequencer);
                 sequencer->update();
               }
             },
             this) {
-    esp_log_level_set(_getTag(), ESP_LOG_WARN);
+    // esp_log_level_set(_getTag(), ESP_LOG_WARN);
     _clock.setStartStopCallback([this](bool isPlaying) {
       _isPlaying = isPlaying;
       if (isPlaying) {
@@ -71,8 +72,9 @@ class Sequencer {
     Tick tick = clk;
 
     if (_tickFunction.is_on_tick(tick)) {
+      // printf("%d\n", tick);
       if (_isRecording) {
-        _scene.getActiveTrack().record(tick, _values);
+        _scene.getActiveTrack()->record(tick, _values);
       }
       if (_isPlaying) {
         _scene.update(tick, _map);
@@ -96,21 +98,28 @@ class Sequencer {
 
   void setValue(const std::string& path, float value) {
     _values[path] = value;
-    ESP_LOGI(_getTag(), "Recorded: '%s' : %f", path.c_str(), value);
   }
 
-  void addSignal(const std::string& path, const Signal& signal) {
+  void addSignal(const std::string& path, float min, float max,
+                 Signal::Callback signalCallback, mpr_dev dev) {
+    Signal signal(
+        path, min, max, signalCallback,
+        [](Signal* signal) {
+          // ESP_LOGI(_getTag(), "setValueCallback: %p", signal);
+          signal->getSequencer()->setValue(signal->getPath(),
+                                            signal->getValue());
+        },
+        dev, this);
     _map.emplace(path, signal);
-    ESP_LOGI(_getTag(), "Added info for '%s'", path.c_str());
+    _map.at(path).updatePtr();
+    ESP_LOGI(_getTag(), "Added signal '%s'", path.c_str());
   }
 
-  void setActiveTrack(int id) {
-    if (id >= 0 && id < NUM_TRACKS) {
-      _scene.setActiveTrack(id);
-    }
-  }
+  void setActiveTrack(int id) { _scene.setActiveTrack(id); }
 
-  void setPlayState(bool state) { _scene.getActiveTrack().setEnabled(state); }
+  void setLength(float value) { _scene.getActiveTrack()->setLength(value); }
+
+  void setPlayState(bool state) { _scene.getActiveTrack()->setEnabled(state); }
 
  private:
   static const char* _getTag() { return "Sequencer"; };

@@ -28,7 +28,7 @@ namespace MapLooper {
 class TickTimer {
  public:
   TickTimer(TaskFunction_t handler, void* userParam = nullptr) {
-    xTaskCreate(handler, "timerTask", 4096, userParam, 25, &_taskHandle);
+    xTaskCreatePinnedToCore(handler, "timerTask", 4096, userParam, 40, &_taskHandle, 1);
 
     timer_config_t config = {.alarm_en = TIMER_ALARM_EN,
                              .counter_en = TIMER_PAUSE,
