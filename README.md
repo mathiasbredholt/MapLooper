@@ -4,8 +4,8 @@
 Embedded Live-Looping Tools for Digital Musical Instruments
 
 ### Dependencies
-- [libmapper-idf](https://github.com/mathiasbredholt/libmapper-idf)
-- [link-idf](https://github.com/mathiasbredholt/link-idf)
+- [libmapper-esp](https://github.com/mathiasbredholt/libmapper-esp)
+- [link-esp](https://github.com/mathiasbredholt/link-esp)
 
 
 ### Examples
