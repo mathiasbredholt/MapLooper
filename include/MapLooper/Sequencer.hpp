@@ -22,7 +22,6 @@
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Scene.hpp"
 #include "MapLooper/Signal.hpp"
-#include "MapLooper/TickTimer.hpp"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,18 +29,17 @@
 namespace MapLooper {
 class Sequencer {
  public:
-  Sequencer()
-      : _tickTimer(
-            [](void* userParam) {
-              Sequencer* sequencer = static_cast<Sequencer*>(userParam);
-              for (;;) {
-                ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-                // printf("%p\n", sequencer);
-                sequencer->update();
-              }
-            },
-            this) {
-    // esp_log_level_set(_getTag(), ESP_LOG_WARN);
+  Sequencer() {
+    xTaskCreate(
+        [](void* userParam) {
+          Sequencer* sequencer = static_cast<Sequencer*>(userParam);
+          for (;;) {
+            sequencer->update();
+            vTaskDelay(1);
+          }
+        },
+        "Sequencer", 4096, this, 19, &_task);
+
     _clock.setStartStopCallback([this](bool isPlaying) {
       _isPlaying = isPlaying;
       if (isPlaying) {
@@ -50,6 +48,8 @@ class Sequencer {
     });
     start();
   }
+
+  ~Sequencer() { vTaskDelete(_task); }
 
   void start() {
     _clock.start();
@@ -96,9 +96,7 @@ class Sequencer {
 
   void setRecording(bool enable) { _isRecording = enable; }
 
-  void setValue(const std::string& path, float value) {
-    _values[path] = value;
-  }
+  void setValue(const std::string& path, float value) { _values[path] = value; }
 
   void addSignal(const std::string& path, float min, float max,
                  Signal::Callback signalCallback, mpr_dev dev) {
@@ -107,7 +105,7 @@ class Sequencer {
         [](Signal* signal) {
           // ESP_LOGI(_getTag(), "setValueCallback: %p", signal);
           signal->getSequencer()->setValue(signal->getPath(),
-                                            signal->getValue());
+                                           signal->getValue());
         },
         dev, this);
     _map.emplace(path, signal);
@@ -124,11 +122,11 @@ class Sequencer {
  private:
   static const char* _getTag() { return "Sequencer"; };
 
+  TaskHandle_t _task;
+
   Clock _clock;
 
   Scene _scene;
-
-  TickTimer _tickTimer;
 
   Signal::Map _map;
 

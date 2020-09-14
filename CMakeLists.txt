@@ -1,3 +1,3 @@
-idf_component_register(SRCS "Clock.cpp" "TickTimer.cpp"
+idf_component_register(SRCS "Clock.cpp"
                        INCLUDE_DIRS "include"
-                       REQUIRES link-idf libmapper-idf)
+                       REQUIRES link-esp libmapper-esp)
