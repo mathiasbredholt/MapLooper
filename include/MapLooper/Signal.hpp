@@ -48,11 +48,9 @@ class Signal {
                                _inputSignalUpdateHandler, MPR_SIG_UPDATE);
     mpr_obj_set_prop((mpr_obj)_inputSignal, MPR_PROP_DATA, NULL, 1, MPR_PTR,
                      this, 0);
-    char outputSignalName[32];
-    snprintf(outputSignalName, sizeof(outputSignalName), "output/%s",
-             path.c_str());
+    std::string outputSignalName = "output/" + std::string(path);
     _outputSignal =
-        mpr_sig_new(dev, MPR_DIR_OUT, outputSignalName, 1, MPR_FLT, 0,
+        mpr_sig_new(dev, MPR_DIR_OUT, outputSignalName.c_str(), 1, MPR_FLT, 0,
                     &_minValue, &_maxValue, 0, 0, MPR_SIG_UPDATE);
     ESP_LOGI(_getTag(), "Created signal '%s'", _path.c_str());
     ESP_LOGI(_getTag(), "Signal ptr %p", this);

@@ -31,10 +31,12 @@ class MapLooper {
 
   MapLooper() {
     ESP_LOGI(_getTag(), "Creating device...");
-    dev = mpr_dev_new("MapLooper", 0);
+    graph = mpr_graph_new(0);
+    dev = mpr_dev_new("MapLooper", graph);
+    _lookForInterestingSignals();
 
     int sigRecordMin = 0, sigRecordMax = 1;
-    _createSignal(
+    recSignal = mpr_sig_new(
         dev, MPR_DIR_IN, "/control/record", 1, MPR_INT32, 0, &sigRecordMin,
         &sigRecordMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
@@ -44,9 +46,10 @@ class MapLooper {
           mapLooper->_sequencer.setRecording(*static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
+    mpr_obj_set_prop(recSignal, MPR_PROP_DATA, NULL, 1, MPR_PTR, this, 0);
 
     int sigTrackSelectMin = 0, sigTrackSelectMax = NUM_TRACKS - 1;
-    _createSignal(
+    trackSelectSignal = mpr_sig_new(
         dev, MPR_DIR_IN, "/control/trackSelect", 1, MPR_INT32, 0,
         &sigTrackSelectMin, &sigTrackSelectMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
@@ -56,9 +59,11 @@ class MapLooper {
           mapLooper->_sequencer.setActiveTrack(*static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
+    mpr_obj_set_prop(trackSelectSignal, MPR_PROP_DATA, NULL, 1, MPR_PTR, this,
+                     0);
 
     int playStateMin = 0, playStateMax = 1;
-    _createSignal(
+    playStateSignal = mpr_sig_new(
         dev, MPR_DIR_IN, "/control/playState", 1, MPR_INT32, 0, &playStateMin,
         &playStateMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
@@ -68,9 +73,10 @@ class MapLooper {
           mapLooper->_sequencer.setPlayState(*static_cast<const int*>(value));
         },
         MPR_SIG_UPDATE);
+    mpr_obj_set_prop(playStateSignal, MPR_PROP_DATA, NULL, 1, MPR_PTR, this, 0);
 
     float lengthMin = 1, lengthMax = 768;
-    _createSignal(
+    lengthSignal = mpr_sig_new(
         dev, MPR_DIR_IN, "/control/length", 1, MPR_FLT, 0, &lengthMin,
         &lengthMax, 0,
         [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
@@ -79,9 +85,10 @@ class MapLooper {
               (mpr_obj)sig, MPR_PROP_DATA, 0);
           mapLooper->_sequencer.setLength(*static_cast<const float*>(value));
         },
-        MPR_SIG_UPDATE);
+        0);
+    mpr_obj_set_prop(lengthSignal, MPR_PROP_DATA, NULL, 1, MPR_PTR, this, 0);
 
-    xTaskCreatePinnedToCore(
+    xTaskCreate(
         [](void* userParam) {
           MapLooper* mapLooper = static_cast<MapLooper*>(userParam);
           for (;;) {
@@ -89,7 +96,7 @@ class MapLooper {
             vTaskDelay(1);
           }
         },
-        "mapper", 16384, this, 3, nullptr, 1);
+        "mapper", 16384, this, 3, nullptr);
   }
 
   void addSignal(const std::string& path, float min, float max,
@@ -101,21 +108,78 @@ class MapLooper {
 
   Sequencer& getSequencer() { return _sequencer; }
 
+  void autoMap() {
+    while (!mpr_dev_get_is_ready(dev)) {
+      mpr_dev_poll(dev, 0);
+      vTaskDelay(100);
+    }
+    ESP_LOGI(_getTag(), "Device ready");
+    mpr_graph_subscribe(graph, nullptr, MPR_SIG, -1);
+  }
+
  private:
   static const char* _getTag() { return "MapLooper"; }
 
-  void _createSignal(mpr_dev parent, mpr_dir dir, const char* name, int len,
-                     mpr_type type, const char* unit, const void* min,
-                     const void* max, int* num_inst, mpr_sig_handler* handler,
-                     int events) {
-    mpr_sig newSignal = mpr_sig_new(parent, dir, name, len, type, unit, min,
-                                    max, num_inst, handler, events);
-    mpr_obj_set_prop((mpr_obj)newSignal, MPR_PROP_DATA, NULL, 1, MPR_PTR, this,
-                     0);
+  void _lookForInterestingSignals() {
+    mpr_graph_add_cb(
+        graph,
+        [](mpr_graph g, mpr_obj obj, const mpr_graph_evt evt,
+           const void* data) {
+          MapLooper* mapLooper = (MapLooper*)data;
+
+          std::string name =
+              mpr_obj_get_prop_as_str((mpr_sig)obj, MPR_PROP_NAME, nullptr);
+
+          ESP_LOGI(_getTag(), "Found signal:");
+          mpr_obj_print(obj, 0);
+
+          mpr_list sigs = mpr_dev_get_sigs(mapLooper->dev, MPR_DIR_IN);
+
+          if (name == "slider1") {
+            ESP_LOGI(_getTag(), "Found slider1, creating map...");
+            // sigs = mpr_list_filter(sigs, MPR_PROP_NAME, nullptr, 1, MPR_STR,
+            //                        "pressure", MPR_OP_EQ);
+            while (sigs) {
+              std::string name =
+                  mpr_obj_get_prop_as_str(*sigs, MPR_PROP_NAME, nullptr);
+              if (name == "pressure") {
+                mpr_map map = mpr_map_new(1, (mpr_sig*)&obj, 1, sigs);
+                mpr_obj_push(map);
+                break;
+              }
+              sigs = mpr_list_get_next(sigs);
+            }
+          } else if (name == "slider2") {
+            ESP_LOGI(_getTag(), "Found slider2, creating map...");
+            // sigs = mpr_list_filter(sigs, MPR_PROP_NAME, nullptr, 1, MPR_STR,
+            //                        "tubeLength", MPR_OP_EQ);
+            while (sigs) {
+              std::string name =
+                  mpr_obj_get_prop_as_str(*sigs, MPR_PROP_NAME, nullptr);
+              if (name == "tubeLength") {
+                mpr_map map = mpr_map_new(1, (mpr_sig*)&obj, 1, sigs);
+                mpr_obj_push(map);
+
+                break;
+              }
+              sigs = mpr_list_get_next(sigs);
+            }
+          } else if (name == "button1") {
+            ESP_LOGI(_getTag(), "Found button1, creating map...");
+            mpr_map map =
+                mpr_map_new(1, (mpr_sig*)&obj, 1, &mapLooper->recSignal);
+            mpr_obj_push(map);
+          }
+        },
+        MPR_SIG, this);
   }
 
   mpr_dev dev;
+  mpr_graph graph;
   Sequencer _sequencer;
-  std::unordered_map<std::string, mpr_sig> _outputSignals;
+  mpr_sig lengthSignal;
+  mpr_sig recSignal;
+  mpr_sig trackSelectSignal;
+  mpr_sig playStateSignal;
 };
 }  // namespace MapLooper
