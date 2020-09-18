@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include "esp_log.h"
-#include "mpr/mpr.h"
+#include "mapper/mapper.h"
 
 namespace MapLooper {
 class Sequencer;
@@ -77,7 +77,7 @@ class Signal {
   inline float getValue() const { return _value; }
 
   void update(float value) {
-    mpr_sig_set_value(_outputSignal, 0, 1, MPR_FLT, &value, MPR_NOW);
+    mpr_sig_set_value(_outputSignal, 0, 1, MPR_FLT, &value);
   }
 
   Sequencer* getSequencer() { return parentSequencer; }

@@ -20,7 +20,7 @@
 #pragma once
 
 #include "MapLooper/Sequencer.hpp"
-#include "mpr/mpr.h"
+#include "mapper/mapper.h"
 
 namespace MapLooper {
 
