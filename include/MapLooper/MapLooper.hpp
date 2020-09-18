@@ -138,11 +138,11 @@ class MapLooper {
           if (name == "slider1") {
             ESP_LOGI(_getTag(), "Found slider1, creating map...");
             // sigs = mpr_list_filter(sigs, MPR_PROP_NAME, nullptr, 1, MPR_STR,
-            //                        "pressure", MPR_OP_EQ);
+            //                        "testSignal1", MPR_OP_EQ);
             while (sigs) {
               std::string name =
                   mpr_obj_get_prop_as_str(*sigs, MPR_PROP_NAME, nullptr);
-              if (name == "pressure") {
+              if (name == "testSignal1") {
                 mpr_map map = mpr_map_new(1, (mpr_sig*)&obj, 1, sigs);
                 mpr_obj_push(map);
                 break;
@@ -152,11 +152,11 @@ class MapLooper {
           } else if (name == "slider2") {
             ESP_LOGI(_getTag(), "Found slider2, creating map...");
             // sigs = mpr_list_filter(sigs, MPR_PROP_NAME, nullptr, 1, MPR_STR,
-            //                        "tubeLength", MPR_OP_EQ);
+            //                        "testSignal2", MPR_OP_EQ);
             while (sigs) {
               std::string name =
                   mpr_obj_get_prop_as_str(*sigs, MPR_PROP_NAME, nullptr);
-              if (name == "tubeLength") {
+              if (name == "testSignal2") {
                 mpr_map map = mpr_map_new(1, (mpr_sig*)&obj, 1, sigs);
                 mpr_obj_push(map);
 
