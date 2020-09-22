@@ -21,15 +21,13 @@
 
 #include <vector>
 
-#include "MapLooper/Clock.hpp"
-#include "MapLooper/Loop.hpp"
-// #include "MapLooper/Sequencer.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "mapper/mapper.h"
+#include "MapLooper/Clock.hpp"
+#include "MapLooper/Loop.hpp"
 
 namespace MapLooper {
-
 class MapLooper {
  public:
   static const int PREVIEW_TIME = 400;
