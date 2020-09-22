@@ -56,7 +56,7 @@ void Clock::stop() {
   reinterpret_cast<ableton::Link *>(_link)->commitAudioSessionState(state);
 }
 
-int32_t Clock::getTicks() const {
+int Clock::getTicks() const {
   auto state =
       reinterpret_cast<ableton::Link *>(_link)->captureAudioSessionState();
   return state.beatAtTime(

@@ -23,13 +23,10 @@
 #include <cstdint>
 #include <functional>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
 namespace MapLooper {
 class Clock {
  public:
-  static constexpr double TICKS_PER_QUARTER_NOTE = 48.0;
+  static constexpr int TICKS_PER_QUARTER_NOTE = 48;
   static constexpr float DEFAULT_TEMPO = 120.0f;
   static const int q = 4;
 
@@ -41,7 +38,7 @@ class Clock {
 
   void stop();
 
-  int32_t getTicks() const;
+  int getTicks() const;
 
   float getTempo() const;
 
@@ -55,7 +52,6 @@ class Clock {
 
  private:
   void* _link;
-
 };
 
 class TickFunction {
