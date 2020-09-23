@@ -21,8 +21,6 @@
 
 #include <vector>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "mapper/mapper.h"
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Loop.hpp"
@@ -47,8 +45,8 @@ class MapLooper {
     return loop;
   }
 
-  void update() {
-    mpr_dev_poll(dev, 0);
+  void update(int blockMs) {
+    mpr_dev_poll(dev, blockMs);
     int t = _clock.getTicks();
     if (lastUpdate != t) {
       lastUpdate = t;

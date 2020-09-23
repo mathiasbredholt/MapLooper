@@ -23,49 +23,72 @@
 #include <cstdint>
 #include <functional>
 
+#include "ableton/Link.hpp"
+
+#ifdef ESP_PLATFORM
+inline unsigned int if_nametoindex(const char *ifname) { return 0; }
+inline char *if_indextoname(unsigned int ifindex, char *ifname) {
+  return nullptr;
+}
+#endif
+
 namespace MapLooper {
 class Clock {
  public:
+  Clock() {
+    link.enableStartStopSync(true);
+    link.enable(true);
+  }
+
+  void reset() {
+    auto state = link.captureAudioSessionState();
+    state.requestBeatAtTime(0.0, link.clock().micros(), q);
+    link.commitAudioSessionState(state);
+  }
+
+  void start() {
+    auto state = link.captureAudioSessionState();
+    state.setIsPlaying(true, link.clock().micros());
+    link.commitAudioSessionState(state);
+  }
+
+  void stop() {
+    auto state = link.captureAudioSessionState();
+    state.setIsPlaying(false, link.clock().micros());
+    link.commitAudioSessionState(state);
+  }
+
+  int getTicks() const {
+    auto state = link.captureAudioSessionState();
+    return state.beatAtTime(link.clock().micros(), q) * TICKS_PER_QUARTER_NOTE;
+  }
+
+  float getTempo() const {
+    auto state = link.captureAudioSessionState();
+    return state.tempo();
+  }
+
+  void setTempo(float tempo) {
+    auto state = link.captureAudioSessionState();
+    state.setTempo(tempo, link.clock().micros());
+    link.commitAudioSessionState(state);
+  }
+
+  bool isLinked() const { return link.numPeers() > 0; }
+
+  void setStartStopCallback(std::function<void(bool)> callback) {
+    link.setStartStopCallback(callback);
+  }
+
+  int getTickInterval() const {
+    return 60 / (getTempo() * TICKS_PER_QUARTER_NOTE);
+  }
+
+ private:
   static constexpr int TICKS_PER_QUARTER_NOTE = 48;
   static constexpr float DEFAULT_TEMPO = 120.0f;
   static const int q = 4;
 
-  Clock();
-
-  void reset();
-
-  void start();
-
-  void stop();
-
-  int getTicks() const;
-
-  float getTempo() const;
-
-  void setTempo(float val);
-
-  bool isLinked() const;
-
-  void setStartStopCallback(std::function<void(bool)> callback);
-
-  int getTickInterval() const;
-
- private:
-  void* _link;
+  ableton::Link link{DEFAULT_TEMPO};
 };
-
-class TickFunction {
- public:
-  bool is_on_tick(int32_t ticks) {
-    if (ticks != last_time) {
-      last_time = ticks;
-      return true;
-    }
-    return false;
-  }
-
- private:
-  int32_t last_time = INT_MIN;
-};
-
 }  // namespace MapLooper

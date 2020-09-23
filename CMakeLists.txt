@@ -1,3 +1,2 @@
-idf_component_register(SRCS "Clock.cpp"
-                       INCLUDE_DIRS "include"
+idf_component_register(INCLUDE_DIRS "include"
                        REQUIRES link-esp libmapper-esp)

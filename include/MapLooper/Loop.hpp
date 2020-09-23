@@ -23,8 +23,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "mapper/mapper.h"
 
 namespace MapLooper {
@@ -35,33 +33,33 @@ class Loop {
       : _id(id), _type(type), _length(length), _src(src), _dst(dst) {
     char sigName[32];
 
-    snprintf(sigName, sizeof(sigName), "%s/%s", id, "in");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "in");
     sigLoopIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, 0, 0, 0,
                             sigLoopInHandler, MPR_SIG_UPDATE);
     mpr_obj_set_prop(sigLoopIn, MPR_PROP_DATA, 0, 1, MPR_PTR, this, 0);
 
-    snprintf(sigName, sizeof(sigName), "%s/%s", id, "out");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "out");
     sigLoopOut = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, NULL, NULL,
                              NULL, NULL, NULL, 0);
 
-    snprintf(sigName, sizeof(sigName), "%s/%s", id, "mix");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "mix");
     sigMix =
         mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, 0, 0, 0, 0, 0);
 
-    snprintf(sigName, sizeof(sigName), "%s/%s", id, "modulation");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "modulation");
     sigMod =
         mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, 0, 0, 0, 0, 0);
 
-    snprintf(sigName, sizeof(sigName), "%s/%s", id, "mute");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "mute");
     sigMute = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_INT32, 0, 0, 0, 0,
                           sigMuteHandler, MPR_SIG_UPDATE);
     mpr_obj_set_prop(sigMute, MPR_PROP_DATA, 0, 1, MPR_PTR, this, 0);
 
-    snprintf(sigName, sizeof(sigName), "%s/%s", id, "local/out");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "local/out");
     sigLocalOut =
         mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, 0, 0, 0, 0, 0, 0);
 
-    snprintf(sigName, sizeof(sigName), "%s/%s", id, "local/in");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "local/in");
     sigLocalIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, 0, 0, 0,
                              sigLocalInHandler, MPR_SIG_UPDATE);
     mpr_obj_set_prop(sigLocalIn, MPR_PROP_DATA, 0, 1, MPR_PTR, this, 0);
@@ -76,11 +74,11 @@ class Loop {
       if (strcmp(loop->_src, sigName) == 0) {
         loop->inMap = mpr_map_new(1, &obj, 1, &loop->sigLoopIn);
         mpr_obj_push(loop->inMap);
-        printf("Found input, creating map!\n");
+        std::printf("Found input, creating map!\n");
       } else if (strcmp(loop->_dst, sigName) == 0) {
         loop->outMap = mpr_map_new(1, &loop->sigLoopOut, 1, &obj);
         mpr_obj_push(loop->outMap);
-        printf("Found output, creating map!\n");
+        std::printf("Found output, creating map!\n");
       }
     };
     mpr_graph_add_cb(graph, _ioMapHandler, MPR_SIG, this);
@@ -113,14 +111,14 @@ class Loop {
   void setDelayLength(int value) {
     if (value > 768) {
       value = 768;
-      printf("Delay lengths should be <= 768\n");
+      std::printf("Delay lengths should be <= 768\n");
     }
 
     delayLength = value;
 
     // Generate map expression
     char expr[128];
-    snprintf(expr, sizeof(expr),
+    std::snprintf(expr, sizeof(expr),
              "y=((1-x1)*x0+x1*y{-%d})*((1-x2)+x2*uniform(1.0))", delayLength);
 
     // Set expression and push map
@@ -175,7 +173,7 @@ class Loop {
         std::memcpy(loop->buffer, value, sizeof(double) * length);
         break;
     }
-    // printf("buffer: %f\n", *((float*) loop->buffer));
+    // std::printf("buffer: %f\n", *((float*) loop->buffer));
   }
 
   static void sigLocalInHandler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
@@ -194,7 +192,7 @@ class Loop {
         std::memcpy(loop->output, value, sizeof(double) * length);
         break;
     }
-    // printf("out: %f\n", *((float*) loop->output));
+    // std::printf("out: %f\n", *((float*) loop->output));
   }
 
   static void sigMuteHandler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
