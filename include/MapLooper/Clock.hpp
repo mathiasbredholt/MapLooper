@@ -28,7 +28,7 @@
 #ifdef ESP_PLATFORM
 inline unsigned int if_nametoindex(const char *ifname) { return 0; }
 inline char *if_indextoname(unsigned int ifindex, char *ifname) {
-  return nullptr;
+  return NULL;
 }
 #endif
 

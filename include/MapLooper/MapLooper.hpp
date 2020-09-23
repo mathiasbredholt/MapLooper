@@ -21,9 +21,9 @@
 
 #include <vector>
 
-#include "mapper/mapper.h"
 #include "MapLooper/Clock.hpp"
 #include "MapLooper/Loop.hpp"
+#include "mapper/mapper.h"
 
 namespace MapLooper {
 class MapLooper {
