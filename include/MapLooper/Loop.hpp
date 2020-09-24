@@ -32,23 +32,24 @@ class Loop {
        const char* dst)
       : _id(id), _type(type), _length(length), _src(src), _dst(dst) {
     char sigName[32];
+    float sigMin = 0.0f, sigMax = 1.0f;
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "in");
-    sigLoopIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, 0, 0, 0,
-                            sigLoopInHandler, MPR_SIG_UPDATE);
+    sigLoopIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
+                            &sigMax, 0, sigLoopInHandler, MPR_SIG_UPDATE);
     mpr_obj_set_prop(sigLoopIn, MPR_PROP_DATA, 0, 1, MPR_PTR, this, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "out");
-    sigLoopOut = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, NULL, NULL,
-                             NULL, NULL, NULL, 0);
+    sigLoopOut = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, 0, &sigMin,
+                             &sigMax, 0, 0, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "mix");
-    sigMix =
-        mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, 0, 0, 0, 0, 0);
+    sigMix = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
+                         &sigMax, 0, 0, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "modulation");
-    sigMod =
-        mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, 0, 0, 0, 0, 0);
+    sigMod = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
+                         &sigMax, 0, 0, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "mute");
     sigMute = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_INT32, 0, 0, 0, 0,
@@ -56,32 +57,37 @@ class Loop {
     mpr_obj_set_prop(sigMute, MPR_PROP_DATA, 0, 1, MPR_PTR, this, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "local/out");
-    sigLocalOut =
-        mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, 0, 0, 0, 0, 0, 0);
+    sigLocalOut = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, 0, &sigMin,
+                              &sigMax, 0, 0, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", id, "local/in");
-    sigLocalIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, 0, 0, 0,
-                             sigLocalInHandler, MPR_SIG_UPDATE);
+    sigLocalIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
+                             &sigMax, 0, sigLocalInHandler, MPR_SIG_UPDATE);
     mpr_obj_set_prop(sigLocalIn, MPR_PROP_DATA, 0, 1, MPR_PTR, this, 0);
 
     graph = mpr_obj_get_graph(dev);
 
-    // Automap handler
-    _ioMapHandler = [](mpr_graph g, mpr_obj obj, const mpr_graph_evt evt,
-                       const void* data) {
-      const char* sigName = mpr_obj_get_prop_as_str(obj, MPR_PROP_NAME, 0);
-      Loop* loop = const_cast<Loop*>(reinterpret_cast<const Loop*>(data));
-      if (strcmp(loop->_src, sigName) == 0) {
-        loop->inMap = mpr_map_new(1, &obj, 1, &loop->sigLoopIn);
-        mpr_obj_push(loop->inMap);
-        std::printf("Found input, creating map!\n");
-      } else if (strcmp(loop->_dst, sigName) == 0) {
-        loop->outMap = mpr_map_new(1, &loop->sigLoopOut, 1, &obj);
-        mpr_obj_push(loop->outMap);
-        std::printf("Found output, creating map!\n");
-      }
-    };
-    mpr_graph_add_cb(graph, _ioMapHandler, MPR_SIG, this);
+    // // Automap handler
+    // _ioMapHandler = [](mpr_graph g, mpr_obj obj, const mpr_graph_evt evt,
+    //                    const void* data) {
+    //   const char* sigName = mpr_obj_get_prop_as_str(obj, MPR_PROP_NAME, 0);
+    //   Loop* loop = const_cast<Loop*>(reinterpret_cast<const Loop*>(data));
+    //   if (strcmp(loop->_src, sigName) == 0) {
+    //     std::printf("Found input, creating map!\n");
+    //     mpr_sig src = obj, dst = loop->sigLoopIn;
+    //     loop->inMap = mpr_map_new(1, &obj, 1, &loop->sigLoopIn);
+    //     _setMapLinear(loop->inMap, src, dst);
+    //     mpr_obj_push(loop->inMap);
+    //   } else if (strcmp(loop->_dst, sigName) == 0) {
+    //     std::printf("Found output, creating map!\n");
+    //     mpr_sig src = loop->sigLoopOut, dst = obj;
+
+    //     loop->outMap = mpr_map_new(1, &src, 1, &dst);
+    //     _setMapLinear(loop->outMap, src, dst);
+    //     mpr_obj_push(loop->outMap);
+    //   }
+    // };
+    // mpr_graph_add_cb(graph, _ioMapHandler, MPR_SIG, this);
 
     size_t typeSize;
     switch (_type) {
@@ -105,7 +111,7 @@ class Loop {
     map = mpr_map_new(3, sigs, 1, &sigLocalIn);
 
     // Update delay length and set map expression
-    setDelayLength(384);
+    setDelayLength(192);
   }
 
   void setDelayLength(int value) {
@@ -119,7 +125,8 @@ class Loop {
     // Generate map expression
     char expr[128];
     std::snprintf(expr, sizeof(expr),
-             "y=((1-x1)*x0+x1*y{-%d})*((1-x2)+x2*uniform(1.0))", delayLength);
+                  "y=((1-_x1)*x0+_x1*y{-%d})*((1-_x2)+_x2*uniform(1.0))",
+                  delayLength);
 
     // Set expression and push map
     mpr_obj_set_prop(map, MPR_PROP_EXPR, 0, 1, MPR_STR, expr, 1);
@@ -129,8 +136,8 @@ class Loop {
   void mapMixTo(const char* sig) {
     _mix = sig;
     mpr_graph_handler* mixMapHAndler = [](mpr_graph g, mpr_obj obj,
-                                           const mpr_graph_evt evt,
-                                           const void* data) {
+                                          const mpr_graph_evt evt,
+                                          const void* data) {
       const char* sigName = mpr_obj_get_prop_as_str(obj, MPR_PROP_NAME, 0);
       Loop* loop = const_cast<Loop*>(reinterpret_cast<const Loop*>(data));
       if (strcmp(loop->_mix, sigName) == 0) {
@@ -220,6 +227,18 @@ class Loop {
   void* output;
 
  private:
+  static void _setMapLinear(mpr_map map, mpr_sig src, mpr_sig dst) {
+    char expr[128];
+    float sMin, sMax, dMin, dMax;
+    sMin = mpr_obj_get_prop_as_flt(src, MPR_PROP_MIN, 0);
+    sMax = mpr_obj_get_prop_as_flt(src, MPR_PROP_MAX, 0);
+    dMin = mpr_obj_get_prop_as_flt(dst, MPR_PROP_MIN, 0);
+    dMax = mpr_obj_get_prop_as_flt(dst, MPR_PROP_MAX, 0);
+    snprintf(expr, sizeof(expr), "y=linear(x,%f,%f,%f,%f)", sMin, sMax, dMin,
+             dMax);
+    mpr_obj_set_prop(map, MPR_PROP_EXPR, 0, 1, MPR_STR, expr, 1);
+  }
+
   const char* _id;
   mpr_type _type;
   int _length;
