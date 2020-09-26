@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include "MapLooper/Clock.hpp"
+#include "ableton/Link.hpp"
 #include "MapLooper/Loop.hpp"
 #include "mapper/mapper.h"
 
@@ -31,28 +31,43 @@ class MapLooper {
   static const int PREVIEW_TIME = 400;
   static const int LED_UPDATE_TIME = 10;
 
-  MapLooper() : dev(mpr_dev_new("MapLooper", 0)) {
+  MapLooper() : dev(mpr_dev_new("MapLooper", 0)), _link(120.0) {
+    // Start Ableton Link
+    _link.enable(true);
+    _link.enableStartStopSync(true);
+
+    // Poll device until ready
     while (!mpr_dev_get_is_ready(dev)) {
       mpr_dev_poll(dev, 10);
     }
+
+    // Refresh all stale maps
+    mpr_list maps = mpr_graph_get_objs(mpr_obj_get_graph(dev), MPR_MAP);
+    while (maps) {
+      mpr_map_refresh(*maps);
+      maps = mpr_list_get_next(maps);
+    }
+
+    // Subscribe to all signals for automapping
     mpr_graph_subscribe(mpr_obj_get_graph(dev), nullptr, MPR_SIG, -1);
   }
 
-  Loop* createLoop(const char* id, mpr_type type, int length, const char* src,
-                   const char* dst) {
-    Loop* loop = new Loop(id, dev, type, length, src, dst);
+  Loop* createLoop(const char* id, mpr_type type, int length) {
+    Loop* loop = new Loop(id, dev, type, length);
     loops.push_back(loop);
     return loop;
   }
 
   void update(int blockMs) {
+    // Poll libmapper device
     mpr_dev_poll(dev, blockMs);
-    int t = _clock.getTicks();
-    if (lastUpdate != t) {
-      lastUpdate = t;
-      for (auto& l : loops) {
-        l->update();
-      }
+
+    // Get beats from Link session
+    auto state = _link.captureAudioSessionState();
+    double beats = state.beatAtTime(_link.clock().micros(), 4.0);
+
+    for (auto& l : loops) {
+      l->update(beats);
     }
   }
 
@@ -60,7 +75,7 @@ class MapLooper {
 
  private:
   std::vector<Loop*> loops;
-  Clock _clock;
+  ableton::Link _link;
   mpr_dev dev;
 
   int lastUpdate = 0;
