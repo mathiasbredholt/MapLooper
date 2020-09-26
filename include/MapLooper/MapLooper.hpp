@@ -74,9 +74,9 @@ class MapLooper {
   mpr_dev getMapperDevice() { return dev; }
 
  private:
-  std::vector<Loop*> loops;
-  ableton::Link _link;
   mpr_dev dev;
+  ableton::Link _link;
+  std::vector<Loop*> loops;
 
   int lastUpdate = 0;
 };
