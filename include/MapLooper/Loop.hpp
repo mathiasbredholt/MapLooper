@@ -28,6 +28,18 @@
 namespace MapLooper {
 class Loop {
  public:
+  mpr_sig sigIn;
+  mpr_sig sigOut;
+  mpr_sig sigMix;
+  mpr_sig sigMod;
+  mpr_sig sigLocalOut;
+  mpr_sig sigLocalIn;
+  mpr_sig sigMute;
+  mpr_map map;
+  mpr_map outMap = 0;
+  mpr_map inMap = 0;
+  mpr_graph graph;
+
   Loop(const char* name, mpr_dev dev, mpr_type type, int length)
       : _name(name), _type(type), _length(length) {
     // Create loop signals
@@ -149,9 +161,7 @@ class Loop {
     }
   }
 
-  void setPulsesPerQuarterNote(int value) {
-    _ppqn = value;
-  }
+  void setPulsesPerQuarterNote(int value) { _ppqn = value; }
 
  private:
   static void _sigInHandler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
@@ -248,18 +258,6 @@ class Loop {
     };
     mpr_graph_add_cb(graph, handler, MPR_SIG, mapData);
   }
-
-  mpr_sig sigIn;
-  mpr_sig sigOut;
-  mpr_sig sigMix;
-  mpr_sig sigMod;
-  mpr_sig sigLocalOut;
-  mpr_sig sigLocalIn;
-  mpr_sig sigMute;
-  mpr_map map;
-  mpr_map outMap = 0;
-  mpr_map inMap = 0;
-  mpr_graph graph;
 
   int _ppqn = 4;
   int _lastUpdate = 0;

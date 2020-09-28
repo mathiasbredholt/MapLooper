@@ -71,7 +71,7 @@ class MapLooper {
     }
   }
 
-  mpr_dev getMapperDevice() { return dev; }
+  mpr_dev getDevice() { return dev; }
 
  private:
   mpr_dev dev;
