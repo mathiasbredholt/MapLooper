@@ -79,23 +79,22 @@ class Loop {
 
     graph = mpr_obj_get_graph(dev);
 
-    size_t typeSize;
     switch (_type) {
       case MPR_INT32:
-        typeSize = sizeof(int);
+        _frameSize = sizeof(int) * _length;
         break;
       case MPR_FLT:
-        typeSize = sizeof(float);
+        _frameSize = sizeof(float) * _length;
         break;
       default:
-        typeSize = sizeof(double);
+        _frameSize = sizeof(double) * _length;
         break;
     }
 
-    buffer = std::malloc(typeSize * _length);
-    output = std::malloc(typeSize * _length);
-    std::memset(buffer, 0, typeSize * _length);
-    std::memset(output, 0, typeSize * _length);
+    buffer = std::malloc(_frameSize);
+    output = std::malloc(_frameSize);
+    std::memset(buffer, 0, _frameSize);
+    std::memset(output, 0, _frameSize);
 
     mpr_sig sigs[] = {sigLocalOut, sigMix, sigMod};
     map = mpr_map_new(3, sigs, 1, &sigLocalIn);
@@ -169,18 +168,7 @@ class Loop {
                             mpr_time time) {
     Loop* loop = reinterpret_cast<Loop*>(
         const_cast<void*>(mpr_obj_get_prop_as_ptr(sig, MPR_PROP_DATA, 0)));
-    switch (type) {
-      case MPR_INT32:
-        std::memcpy(loop->buffer, value, sizeof(int) * length);
-        break;
-      case MPR_FLT:
-        std::memcpy(loop->buffer, value, sizeof(float) * length);
-        break;
-      default:
-        std::memcpy(loop->buffer, value, sizeof(double) * length);
-        break;
-    }
-    // std::printf("buffer: %f\n", *((float*) loop->buffer));
+    std::memcpy(loop->buffer, value, loop->_frameSize);
   }
 
   static void _sigLocalInHandler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
@@ -188,18 +176,7 @@ class Loop {
                                  mpr_time time) {
     Loop* loop = reinterpret_cast<Loop*>(
         const_cast<void*>(mpr_obj_get_prop_as_ptr(sig, MPR_PROP_DATA, 0)));
-    switch (type) {
-      case MPR_INT32:
-        std::memcpy(loop->output, value, sizeof(int) * length);
-        break;
-      case MPR_FLT:
-        std::memcpy(loop->output, value, sizeof(float) * length);
-        break;
-      default:
-        std::memcpy(loop->output, value, sizeof(double) * length);
-        break;
-    }
-    // std::printf("out: %f\n", *((float*) loop->output));
+    std::memcpy(loop->output, value, loop->_frameSize);
   }
 
   static void _sigMuteHandler(mpr_sig sig, mpr_sig_evt evt, mpr_id inst,
@@ -209,18 +186,6 @@ class Loop {
         mpr_obj_get_prop_as_ptr(sig, MPR_PROP_DATA, 0)));
     const bool val = *reinterpret_cast<const int*>(value);
     mpr_obj_set_prop(loop->outMap, MPR_PROP_MUTED, 0, 1, MPR_BOOL, &val, 1);
-  }
-
-  static void _setMapLinear(mpr_map map, mpr_sig src, mpr_sig dst) {
-    char expr[128];
-    float sMin, sMax, dMin, dMax;
-    sMin = mpr_obj_get_prop_as_flt(src, MPR_PROP_MIN, 0);
-    sMax = mpr_obj_get_prop_as_flt(src, MPR_PROP_MAX, 0);
-    dMin = mpr_obj_get_prop_as_flt(dst, MPR_PROP_MIN, 0);
-    dMax = mpr_obj_get_prop_as_flt(dst, MPR_PROP_MAX, 0);
-    snprintf(expr, sizeof(expr), "y=linear(x,%f,%f,%f,%f)", sMin, sMax, dMin,
-             dMax);
-    mpr_obj_set_prop(map, MPR_PROP_EXPR, 0, 1, MPR_STR, expr, 1);
   }
 
   void _mapFrom(const char* src, mpr_sig* dst) {
@@ -267,6 +232,7 @@ class Loop {
 
   const char* _name;
   mpr_type _type;
+  size_t _frameSize;
   int _length;
   int bufferSize;
 };
