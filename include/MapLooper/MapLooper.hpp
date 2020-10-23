@@ -21,63 +21,59 @@
 
 #include <vector>
 
-#include "ableton/Link.hpp"
 #include "MapLooper/Loop.hpp"
+#include "ableton/Link.hpp"
 #include "mapper/mapper.h"
 
 namespace MapLooper {
 class MapLooper {
  public:
-  static const int PREVIEW_TIME = 400;
-  static const int LED_UPDATE_TIME = 10;
-
-  MapLooper() : dev(mpr_dev_new("MapLooper", 0)), _link(120.0) {
+  MapLooper() : _dev(mpr_dev_new("MapLooper", 0)), _link(120.0) {
     // Start Ableton Link
     _link.enable(true);
     _link.enableStartStopSync(true);
 
     // Poll device until ready
-    while (!mpr_dev_get_is_ready(dev)) {
-      mpr_dev_poll(dev, 10);
+    while (!mpr_dev_get_is_ready(_dev)) {
+      mpr_dev_poll(_dev, 10);
     }
 
     // Refresh all stale maps
-    mpr_list maps = mpr_graph_get_objs(mpr_obj_get_graph(dev), MPR_MAP);
+    mpr_list maps = mpr_graph_get_objs(mpr_obj_get_graph(_dev), MPR_MAP);
     while (maps) {
       mpr_map_refresh(*maps);
       maps = mpr_list_get_next(maps);
     }
 
     // Subscribe to all signals for automapping
-    mpr_graph_subscribe(mpr_obj_get_graph(dev), nullptr, MPR_SIG, -1);
+    mpr_graph_subscribe(mpr_obj_get_graph(_dev), nullptr, MPR_SIG, -1);
   }
 
-  Loop* createLoop(const char* id, mpr_type type, int length) {
-    Loop* loop = new Loop(id, dev, type, length);
-    loops.push_back(loop);
+  Loop* createLoop(const char* id, mpr_type type = MPR_FLT,
+                   int vectorSize = 1) {
+    Loop* loop = new Loop(id, _dev, type, vectorSize);
+    _loops.push_back(loop);
     return loop;
   }
 
   void update(int blockMs) {
     // Poll libmapper device
-    mpr_dev_poll(dev, blockMs);
+    mpr_dev_poll(_dev, blockMs);
 
     // Get beats from Link session
     auto state = _link.captureAudioSessionState();
     double beats = state.beatAtTime(_link.clock().micros(), 4.0);
 
-    for (auto& l : loops) {
+    for (auto& l : _loops) {
       l->update(beats);
     }
   }
 
-  mpr_dev getDevice() { return dev; }
+  mpr_dev getDevice() { return _dev; }
 
  private:
-  mpr_dev dev;
+  mpr_dev _dev;
   ableton::Link _link;
-  std::vector<Loop*> loops;
-
-  int lastUpdate = 0;
+  std::vector<Loop*> _loops;
 };
 }  // namespace MapLooper

@@ -30,34 +30,41 @@ class Loop {
  public:
   mpr_sig sigIn;
   mpr_sig sigOut;
-  mpr_sig sigMix;
+  mpr_sig sigRecord;
+  mpr_sig sigDelay;
   mpr_sig sigMod;
   mpr_sig sigLocalOut;
   mpr_sig sigLocalIn;
   mpr_sig sigMute;
-  mpr_map map;
+  mpr_map loopMap;
   mpr_map outMap = 0;
   mpr_map inMap = 0;
-  mpr_graph graph;
 
-  Loop(const char* name, mpr_dev dev, mpr_type type, int length)
-      : _name(name), _type(type), _length(length) {
+  Loop(const char* name, mpr_dev dev, mpr_type type, int vectorSize)
+      : _name(name), _type(type), _vectorSize(vectorSize) {
     // Create loop signals
     char sigName[128];
     float sigMin = 0.0f, sigMax = 1.0f;
+    float minDelay = -1000.0f, maxDelay = -1.0f;
+    float defaultDelay = -16.0f;
 
-    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "in");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "input");
     sigIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
                         &sigMax, 0, _sigInHandler, MPR_SIG_UPDATE);
     mpr_obj_set_prop(sigIn, MPR_PROP_DATA, 0, 1, MPR_PTR, this, 0);
 
-    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "out");
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "output");
     sigOut = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, 0, &sigMin,
                          &sigMax, 0, 0, 0);
 
-    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "mix");
-    sigMix = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
-                         &sigMax, 0, 0, 0);
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "record");
+    sigRecord = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
+                            &sigMax, 0, 0, 0);
+
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "delay");
+    sigDelay = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &minDelay,
+                           &maxDelay, 0, 0, 0);
+    mpr_sig_set_value(sigDelay, 0, 1, MPR_FLT, &defaultDelay);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "modulation");
     sigMod = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
@@ -77,17 +84,17 @@ class Loop {
                              &sigMax, 0, _sigLocalInHandler, MPR_SIG_UPDATE);
     mpr_obj_set_prop(sigLocalIn, MPR_PROP_DATA, 0, 1, MPR_PTR, this, 0);
 
-    graph = mpr_obj_get_graph(dev);
+    _graph = mpr_obj_get_graph(dev);
 
     switch (_type) {
       case MPR_INT32:
-        _frameSize = sizeof(int) * _length;
+        _frameSize = sizeof(int) * _vectorSize;
         break;
       case MPR_FLT:
-        _frameSize = sizeof(float) * _length;
+        _frameSize = sizeof(float) * _vectorSize;
         break;
       default:
-        _frameSize = sizeof(double) * _length;
+        _frameSize = sizeof(double) * _vectorSize;
         break;
     }
 
@@ -96,11 +103,10 @@ class Loop {
     std::memset(buffer, 0, _frameSize);
     std::memset(output, 0, _frameSize);
 
-    mpr_sig sigs[] = {sigLocalOut, sigMix, sigMod};
-    map = mpr_map_new(3, sigs, 1, &sigLocalIn);
-
-    // Update buffer size and set map expression
-    setBufferSize(16);
+    loopMap = mpr_map_new_from_str(
+        "%y=(_%x*%x+(1-_%x)*y{_%x,1000})*((1-_%x)+_%x*uniform(2.0))", sigLocalIn,
+        sigRecord, sigLocalOut, sigRecord, sigDelay, sigMod, sigMod);
+    mpr_obj_push(loopMap);
   }
 
   ~Loop() {
@@ -108,35 +114,18 @@ class Loop {
     free(output);
     mpr_sig_free(sigIn);
     mpr_sig_free(sigOut);
-    mpr_sig_free(sigMix);
+    mpr_sig_free(sigRecord);
     mpr_sig_free(sigLocalOut);
     mpr_sig_free(sigLocalIn);
-  }
-
-  void setBufferSize(int value) {
-    if (value > 768) {
-      value = 768;
-      std::printf("Buffer lengths should be <= 768\n");
-    }
-
-    bufferSize = value;
-
-    // Generate map expression
-    char expr[128];
-    std::snprintf(expr, sizeof(expr),
-                  "y=((1-_x1)*x0+_x1*y{-%d})*((1-_x2)+_x2*uniform(2.0))",
-                  bufferSize);
-
-    // Set expression and push map
-    mpr_obj_set_prop(map, MPR_PROP_EXPR, 0, 1, MPR_STR, expr, 1);
-    mpr_obj_push(map);
   }
 
   void setMute(bool value) {
     mpr_obj_set_prop(outMap, MPR_PROP_MUTED, 0, 1, MPR_INT32, &value, 0);
   }
 
-  void mapMix(const char* src) { _mapFrom(src, &sigMix); }
+  void mapRecord(const char* src) { _mapFrom(src, &sigRecord); }
+
+  void mapDelay(const char* src) { _mapFrom(src, &sigDelay); }
 
   void mapModulation(const char* src) { _mapFrom(src, &sigMod); }
 
@@ -153,8 +142,8 @@ class Loop {
       }
 
       // Update buffer and output
-      mpr_sig_set_value(sigLocalOut, 0, _length, _type, buffer);
-      mpr_sig_set_value(sigOut, 0, _length, _type, output);
+      mpr_sig_set_value(sigLocalOut, 0, _vectorSize, _type, buffer);
+      mpr_sig_set_value(sigOut, 0, _vectorSize, _type, output);
 
       _lastUpdate = now;
     }
@@ -200,10 +189,10 @@ class Loop {
       MapData* mapData = reinterpret_cast<MapData*>(const_cast<void*>(data));
       const char* found = mpr_obj_get_prop_as_str(obj, MPR_PROP_NAME, 0);
       if (strcmp(mapData->src, found) == 0) {
-        mpr_obj_push(mpr_map_new(1, &obj, 1, mapData->dst));
+        mpr_obj_push(mpr_map_new(1, (mpr_sig*)&obj, 1, mapData->dst));
       }
     };
-    mpr_graph_add_cb(graph, handler, MPR_SIG, mapData);
+    mpr_graph_add_cb(_graph, handler, MPR_SIG, mapData);
   }
 
   void _mapTo(mpr_sig* src, const char* dst) {
@@ -218,11 +207,13 @@ class Loop {
       MapData* mapData = reinterpret_cast<MapData*>(const_cast<void*>(data));
       const char* found = mpr_obj_get_prop_as_str(obj, MPR_PROP_NAME, 0);
       if (strcmp(mapData->dst, found) == 0) {
-        mpr_obj_push(mpr_map_new(1, mapData->src, 1, &obj));
+        mpr_obj_push(mpr_map_new(1, mapData->src, 1, (mpr_sig*)&obj));
       }
     };
-    mpr_graph_add_cb(graph, handler, MPR_SIG, mapData);
+    mpr_graph_add_cb(_graph, handler, MPR_SIG, mapData);
   }
+
+  mpr_graph _graph;
 
   int _ppqn = 4;
   int _lastUpdate = 0;
@@ -233,7 +224,6 @@ class Loop {
   const char* _name;
   mpr_type _type;
   size_t _frameSize;
-  int _length;
-  int bufferSize;
+  int _vectorSize;
 };
 }  // namespace MapLooper
