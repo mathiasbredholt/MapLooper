@@ -13,6 +13,7 @@ Embedded Live-Looping Tools for Digital Musical Instruments
 
 ### Examples
 - [Basic example](https://github.com/mathiasbredholt/MapLooper-example)
+- [GUI example](https://github.com/mathiasbredholt/MapLooper-gui)
 - [T-Stick example](https://github.com/mathiasbredholt/MapLooper-tstick)
 - [FAUST example](https://github.com/mathiasbredholt/MapLooper-faust)
 - [Flute example](https://github.com/mathiasbredholt/MapLooper-flute)
