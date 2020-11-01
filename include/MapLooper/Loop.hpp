@@ -44,7 +44,6 @@ class Loop {
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "delay");
     sigDelay = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &minDelay,
                            &maxDelay, 0, 0, 0);
-    mpr_sig_set_value(sigDelay, 0, 1, MPR_FLT, &minDelay);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "modulation");
     sigMod = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
@@ -80,6 +79,12 @@ class Loop {
         "%y=(_%x*%x+(1-_%x)*y{_%x,100})*((1-_%x)+_%x*uniform(2.0))", sigLocalIn,
         sigRecord, sigLocalOut, sigRecord, sigDelay, sigMod, sigMod);
     mpr_obj_push(loopMap);
+
+    while (!mpr_map_get_is_ready(loopMap)) {
+      mpr_dev_poll(dev, 10);
+    }
+
+    setLength(1.0);
   }
 
   ~Loop() {
@@ -131,7 +136,22 @@ class Loop {
     }
   }
 
-  void setPulsesPerQuarterNote(int value) { _ppqn = value; }
+  int getPulsesPerQuarterNote() { return _ppqn; }
+
+  void setPulsesPerQuarterNote(int value) {
+    _ppqn = value;
+
+    // PPQN changed, length needs to be updated
+    setLength(_length);
+  }
+
+  float getLength() { return _length; }
+
+  void setLength(float beats) {
+    _length = beats;
+    float delay = -_ppqn * _length;
+    mpr_sig_set_value(sigDelay, 0, 1, MPR_FLT, &delay);
+  }
 
   mpr_sig sigRecord;
   mpr_sig sigDelay;
@@ -189,5 +209,6 @@ class Loop {
 
   mpr_type _type;
   int _vectorSize;
+  float _length;
 };
 }  // namespace MapLooper

@@ -71,6 +71,17 @@ class MapLooper {
 
   mpr_dev getDevice() { return _dev; }
 
+  void setTempo(float tempo) {
+    auto sessionState = _link.captureAppSessionState();
+    sessionState.setTempo(tempo, _link.clock().micros());
+    _link.commitAppSessionState(sessionState);
+  }
+
+  float getTempo() {
+    auto sessionState = _link.captureAppSessionState();
+    return sessionState.tempo();
+  }
+
  private:
   mpr_dev _dev;
   ableton::Link _link;
