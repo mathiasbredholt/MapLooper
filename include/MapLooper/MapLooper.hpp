@@ -21,9 +21,12 @@
 
 #include <vector>
 
-#include "MapLooper/Loop.hpp"
+// Link has to included before libmapper
 #include "ableton/Link.hpp"
 #include "mapper/mapper.h"
+
+// Now we can include Loop.hpp
+#include "MapLooper/Loop.hpp"
 
 namespace MapLooper {
 class MapLooper {
