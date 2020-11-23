@@ -65,10 +65,10 @@ class MapLooper {
 
     // Get beats from Link session
     auto state = _link.captureAudioSessionState();
-    double beats = state.beatAtTime(_link.clock().micros(), 4.0);
+    _beats = state.beatAtTime(_link.clock().micros(), 4.0);
 
     for (auto& l : _loops) {
-      l->update(beats);
+      l->update(_beats);
     }
   }
 
@@ -85,9 +85,14 @@ class MapLooper {
     return sessionState.tempo();
   }
 
+  double getBeats() {
+    return _beats;
+  }
+
  private:
   mpr_dev _dev;
   ableton::Link _link;
   std::vector<Loop*> _loops;
+  double _beats = 0;
 };
 }  // namespace MapLooper

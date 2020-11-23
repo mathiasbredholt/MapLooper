@@ -47,8 +47,9 @@ class Loop {
                             &maxDelay, 0, 0, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "modulation");
-    _sigMod = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
+    _sigModulation = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
                           &sigMax, 0, 0, 0);
+    mpr_sig_set_value(_sigModulation, 0, 1, MPR_FLT, &sigMin);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "mute");
     _sigMute = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_INT32, 0, &muteMin,
@@ -77,9 +78,9 @@ class Loop {
     // Create map
 
     _loopMap = mpr_map_new_from_str(
-        "%y=(_%x*%x+(1-_%x)*y{_%x,100})*((1-_%x)+_%x*uniform(2.0))",
-        _sigLocalIn, _sigRecord, _sigLocalOut, _sigRecord, _sigDelay, _sigMod,
-        _sigMod);
+        "%y=_%x*%x+(1-_%x)*y{_%x,100}+_%x*(uniform(2.0)-1)",
+        _sigLocalIn, _sigRecord, _sigLocalOut, _sigRecord, _sigDelay, _sigModulation,
+        _sigModulation);
     mpr_obj_push(_loopMap);
 
     while (!mpr_map_get_is_ready(_loopMap)) {
@@ -92,7 +93,7 @@ class Loop {
   ~Loop() {
     mpr_sig_free(_sigRecord);
     mpr_sig_free(_sigDelay);
-    mpr_sig_free(_sigMod);
+    mpr_sig_free(_sigModulation);
     mpr_sig_free(_sigIn);
     mpr_sig_free(_sigOut);
     mpr_sig_free(_sigLocalOut);
@@ -103,7 +104,7 @@ class Loop {
 
   void mapDelay(const char* src) { _mapFrom(src, &_sigDelay); }
 
-  void mapModulation(const char* src) { _mapFrom(src, &_sigMod); }
+  void mapModulation(const char* src) { _mapFrom(src, &_sigModulation); }
 
   void mapInput(const char* src) { _mapFrom(src, &_sigIn); }
 
@@ -157,7 +158,7 @@ class Loop {
 
   mpr_sig getOutputSignal() { return _sigOut; }
 
-  mpr_sig getModulationSignal() { return _sigMod; }
+  mpr_sig getModulationSignal() { return _sigModulation; }
 
   mpr_sig getDelaySignal() { return _sigDelay; }
 
@@ -206,7 +207,7 @@ class Loop {
   mpr_map _loopMap;
   mpr_sig _sigRecord;
   mpr_sig _sigDelay;
-  mpr_sig _sigMod;
+  mpr_sig _sigModulation;
   mpr_sig _sigIn;
   mpr_sig _sigOut;
   mpr_sig _sigLocalOut;
