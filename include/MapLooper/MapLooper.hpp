@@ -41,6 +41,14 @@ class MapLooper {
       mpr_dev_poll(_dev, 10);
     }
 
+    float tempoMin = 20.0f, tempoMax = 255.0f;
+    _sigTempo = mpr_sig_new(_dev, MPR_DIR_OUT, "tempo", 1, MPR_FLT, "bpm",
+                            &tempoMin, &tempoMax, 0, 0, 0);
+
+    auto state = _link.captureAppSessionState();
+    float tempo = state.tempo();
+    mpr_sig_set_value(_sigTempo, 0, 1, MPR_FLT, &tempo);
+
     // Refresh all stale maps
     mpr_list maps = mpr_graph_get_objs(mpr_obj_get_graph(_dev), MPR_MAP);
     while (maps) {
@@ -64,8 +72,12 @@ class MapLooper {
     mpr_dev_poll(_dev, blockMs);
 
     // Get beats from Link session
-    auto state = _link.captureAudioSessionState();
-    _beats = state.beatAtTime(_link.clock().micros(), 4.0);
+    auto sessionState = _link.captureAudioSessionState();
+    _beats = sessionState.beatAtTime(_link.clock().micros(), 4.0);
+
+    float tempo = *((float*)mpr_sig_get_value(_sigTempo, 0, 0));
+    sessionState.setTempo(tempo, _link.clock().micros());
+    _link.commitAudioSessionState(sessionState);
 
     for (auto& l : _loops) {
       l->update(_beats);
@@ -74,23 +86,13 @@ class MapLooper {
 
   mpr_dev getDevice() { return _dev; }
 
-  void setTempo(float tempo) {
-    auto sessionState = _link.captureAppSessionState();
-    sessionState.setTempo(tempo, _link.clock().micros());
-    _link.commitAppSessionState(sessionState);
-  }
+  mpr_sig getTempoSignal() { return _sigTempo; }
 
-  float getTempo() {
-    auto sessionState = _link.captureAppSessionState();
-    return sessionState.tempo();
-  }
-
-  double getBeats() {
-    return _beats;
-  }
+  double getBeats() { return _beats; }
 
  private:
   mpr_dev _dev;
+  mpr_sig _sigTempo;
   ableton::Link _link;
   std::vector<Loop*> _loops;
   double _beats = 0;

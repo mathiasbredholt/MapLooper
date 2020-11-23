@@ -1,6 +1,6 @@
 .DS_Store
 *.pdf
-*checkpoint.ipynb
+*.ipynb
 
 Builds*
 build*

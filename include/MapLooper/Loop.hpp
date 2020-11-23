@@ -33,6 +33,7 @@ class Loop {
       : _graph(mpr_obj_get_graph(dev)), _type(type), _vectorSize(vectorSize) {
     char sigName[128];
     int muteMin = 0, muteMax = 1;
+    int ppqnMin = 1, ppqnMax = 96;
     float sigMin = 0.0f, sigMax = 1.0f;
     float minDelay = -100.0f, maxDelay = -1.0f;
 
@@ -47,9 +48,15 @@ class Loop {
                             &maxDelay, 0, 0, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "modulation");
-    _sigModulation = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
-                          &sigMax, 0, 0, 0);
+    _sigModulation = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0,
+                                 &sigMin, &sigMax, 0, 0, 0);
     mpr_sig_set_value(_sigModulation, 0, 1, MPR_FLT, &sigMin);
+
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "ppqn");
+    _sigPpqn = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_INT32, 0, &ppqnMin,
+                           &ppqnMax, 0, 0, 0);
+    int defaultPpqn = 16;
+    mpr_sig_set_value(_sigPpqn, 0, 1, MPR_INT32, &defaultPpqn);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "mute");
     _sigMute = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_INT32, 0, &muteMin,
@@ -78,8 +85,8 @@ class Loop {
     // Create map
 
     _loopMap = mpr_map_new_from_str(
-        "%y=_%x*%x+(1-_%x)*y{_%x,100}+_%x*(uniform(2.0)-1)",
-        _sigLocalIn, _sigRecord, _sigLocalOut, _sigRecord, _sigDelay, _sigModulation,
+        "%y=_%x*%x+(1-_%x)*y{_%x,100}+_%x*(uniform(2.0)-1)", _sigLocalIn,
+        _sigRecord, _sigLocalOut, _sigRecord, _sigDelay, _sigModulation,
         _sigModulation);
     mpr_obj_push(_loopMap);
 
@@ -94,6 +101,7 @@ class Loop {
     mpr_sig_free(_sigRecord);
     mpr_sig_free(_sigDelay);
     mpr_sig_free(_sigModulation);
+    mpr_sig_free(_sigPpqn);
     mpr_sig_free(_sigIn);
     mpr_sig_free(_sigOut);
     mpr_sig_free(_sigLocalOut);
@@ -111,12 +119,18 @@ class Loop {
   void mapOutput(const char* dst) { _mapTo(&_sigOut, dst); }
 
   void update(double beats) {
-    int now = beats * _ppqn;
+    int ppqn = *((int*)mpr_sig_get_value(_sigPpqn, 0, 0));
+
+    int now = beats * ppqn;
     if (now != _lastUpdate) {
       // Check if ticks were missed
       if (now - _lastUpdate > 1) {
         printf("Missed %d ticks!\n", now - _lastUpdate - 1);
       }
+
+      // Calculate delay-length
+      float delay = -ppqn * _length;
+      mpr_sig_set_value(_sigDelay, 0, 1, MPR_FLT, &delay);
 
       // Update local out
       const void* inputValue = mpr_sig_get_value(_sigIn, 0, 0);
@@ -135,30 +149,22 @@ class Loop {
     }
   }
 
-  int getPulsesPerQuarterNote() { return _ppqn; }
-
-  void setPulsesPerQuarterNote(int value) {
-    _ppqn = value;
-
-    // PPQN changed, length needs to be updated
-    setLength(_length);
+  int getNumSamples() {
+    int ppqn = *((int*)mpr_sig_get_value(_sigPpqn, 0, 0));
+    return ppqn * _length;
   }
-
-  int getNumSamples() { return _ppqn * _length; }
 
   float getLength() { return _length; }
 
-  void setLength(float beats) {
-    _length = beats;
-    float delay = -_ppqn * _length;
-    mpr_sig_set_value(_sigDelay, 0, 1, MPR_FLT, &delay);
-  }
+  void setLength(float beats) { _length = beats; }
 
   mpr_sig getInputSignal() { return _sigIn; }
 
   mpr_sig getOutputSignal() { return _sigOut; }
 
   mpr_sig getModulationSignal() { return _sigModulation; }
+
+  mpr_sig getPpqnSignal() { return _sigPpqn; }
 
   mpr_sig getDelaySignal() { return _sigDelay; }
 
@@ -208,6 +214,7 @@ class Loop {
   mpr_sig _sigRecord;
   mpr_sig _sigDelay;
   mpr_sig _sigModulation;
+  mpr_sig _sigPpqn;
   mpr_sig _sigIn;
   mpr_sig _sigOut;
   mpr_sig _sigLocalOut;

@@ -64,7 +64,7 @@ int main(int argc, char const* argv[]) {
       float rec = 0.0f;
       mpr_sig_set_value(recordSignal, 0, 1, MPR_FLT, &rec);
     } else if (now > 4.0 && now < 8.0) {
-      noise = 0.25f;
+      noise = 0.1f;
       mpr_sig_set_value(noiseSignal, 0, 1, MPR_FLT, &noise);
     } else if (now > 8.0 && now < 12.0) {
       noise = 0.0f;
