@@ -31,7 +31,8 @@
 namespace MapLooper {
 class MapLooper {
  public:
-  MapLooper() : _dev(mpr_dev_new("MapLooper", 0)), _link(120.0) {
+  MapLooper(const char* deviceName = "MapLooper")
+      : _dev(mpr_dev_new(deviceName, 0)), _link(120.0) {
     // Start Ableton Link
     _link.enable(true);
     _link.enableStartStopSync(true);
@@ -41,13 +42,21 @@ class MapLooper {
       mpr_dev_poll(_dev, 10);
     }
 
+    // Create tempo input signal
     float tempoMin = 20.0f, tempoMax = 255.0f;
-    _sigTempo = mpr_sig_new(_dev, MPR_DIR_OUT, "tempo", 1, MPR_FLT, "bpm",
-                            &tempoMin, &tempoMax, 0, 0, 0);
-
-    auto state = _link.captureAppSessionState();
-    float tempo = state.tempo();
-    mpr_sig_set_value(_sigTempo, 0, 1, MPR_FLT, &tempo);
+    _sigTempo = mpr_sig_new(
+        _dev, MPR_DIR_IN, "tempo", 1, MPR_FLT, "bpm", &tempoMin, &tempoMax, 0,
+        [](mpr_sig sig, mpr_sig_evt evt, mpr_id inst, int length, mpr_type type,
+           const void* value, mpr_time time) {
+          float tempo = *((float*)value);
+          ableton::Link* link =
+              (ableton::Link*)mpr_obj_get_prop_as_ptr(sig, MPR_PROP_DATA, 0);
+          auto sessionState = link->captureAppSessionState();
+          sessionState.setTempo(tempo, link->clock().micros());
+          link->commitAppSessionState(sessionState);
+        },
+        MPR_SIG_UPDATE);
+    mpr_obj_set_prop(_sigTempo, MPR_PROP_DATA, 0, 1, MPR_PTR, &_link, 0);
 
     // Refresh all stale maps
     mpr_list maps = mpr_graph_get_objs(mpr_obj_get_graph(_dev), MPR_MAP);
@@ -75,10 +84,6 @@ class MapLooper {
     auto sessionState = _link.captureAudioSessionState();
     _beats = sessionState.beatAtTime(_link.clock().micros(), 4.0);
 
-    float tempo = *((float*)mpr_sig_get_value(_sigTempo, 0, 0));
-    sessionState.setTempo(tempo, _link.clock().micros());
-    _link.commitAudioSessionState(sessionState);
-
     for (auto& l : _loops) {
       l->update(_beats);
     }
@@ -87,6 +92,17 @@ class MapLooper {
   mpr_dev getDevice() { return _dev; }
 
   mpr_sig getTempoSignal() { return _sigTempo; }
+
+  void setTempo(double tempo) {
+    auto sessionState = _link.captureAppSessionState();
+    sessionState.setTempo(tempo, _link.clock().micros());
+    _link.commitAppSessionState(sessionState);
+  }
+
+  double getTempo() {
+    auto sessionState = _link.captureAppSessionState();
+    return sessionState.tempo();
+  }
 
   double getBeats() { return _beats; }
 
