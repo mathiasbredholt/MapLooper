@@ -38,7 +38,6 @@ class Loop {
     float minDelay = -100.0f, maxDelay = -1.0f;
 
     // Create control signals
-
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "record");
     _sigRecord = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
                              &sigMax, 0, 0, 0);
@@ -64,7 +63,6 @@ class Loop {
     mpr_sig_set_value(_sigMute, 0, 1, MPR_INT32, &muteMin);
 
     // Create input and output signals
-
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "input");
     _sigIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, _vectorSize, _type, 0,
                          &sigMin, &sigMax, 0, 0, 0);
@@ -74,14 +72,20 @@ class Loop {
     _sigOut = mpr_sig_new(dev, MPR_DIR_OUT, sigName, _vectorSize, _type, 0,
                           &sigMin, &sigMax, 0, 0, 0);
 
+    std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "local/in");
+    _sigLocalIn = mpr_sig_new(dev, MPR_DIR_IN, sigName, _vectorSize, _type, 0,
+                              &sigMin, &sigMax, 0, 0, 0);
+    mpr_sig_set_value(_sigLocalIn, 0, _vectorSize, _type, &sigMin);
+
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "local/out");
     _sigLocalOut = mpr_sig_new(dev, MPR_DIR_OUT, sigName, _vectorSize, _type, 0,
                                &sigMin, &sigMax, 0, 0, 0);
+    mpr_sig_set_value(_sigLocalOut, 0, _vectorSize, _type, &sigMin);
+
 
     // Create map
-
     _loopMap = mpr_map_new_from_str(
-        "%y=_%x*%x+(1-_%x)*y{_%x,100}+_%x*(uniform(2.0)-1)", _sigOut,
+        "%y=_%x*%x+(1-_%x)*y{_%x,100}+_%x*(uniform(2.0)-1)", _sigLocalIn,
         _sigRecord, _sigLocalOut, _sigRecord, _sigDelay, _sigModulation);
     mpr_obj_push(_loopMap);
 
@@ -127,15 +131,18 @@ class Loop {
       float delay = -ppqn * _length;
       mpr_sig_set_value(_sigDelay, 0, 1, MPR_FLT, &delay);
 
-       // Check if muted
-      bool muted = *((int*)mpr_sig_get_value(_sigMute, 0, 0));
-      mpr_obj_set_prop(_loopMap, MPR_PROP_MUTED, 0, 1, MPR_BOOL, &muted, 0);
-
       // Update local out
       const void* inputValue = mpr_sig_get_value(_sigIn, 0, 0);
       mpr_sig_set_value(_sigLocalOut, 0, _vectorSize, _type, inputValue);
 
       _lastUpdate = now;
+    }
+
+    // Check if muted
+    bool muted = *((int*)mpr_sig_get_value(_sigMute, 0, 0));
+    if (!muted) {
+      const void* outputValue = mpr_sig_get_value(_sigLocalIn, 0, 0);
+      mpr_sig_set_value(_sigOut, 0, _vectorSize, _type, outputValue);
     }
   }
 
