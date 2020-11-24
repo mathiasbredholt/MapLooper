@@ -32,6 +32,8 @@ int main(int argc, char const* argv[]) {
 
   MapLooper::MapLooper mapLooper;
   MapLooper::Loop* testLoop = mapLooper.createLoop("test");
+  int ppqn = 2;
+  mpr_sig_set_value(testLoop->getPpqnSignal(), 0, 1, MPR_INT32, &ppqn);
 
   mpr_sig inputSignal = testLoop->getInputSignal();
   mpr_sig outputSignal = testLoop->getOutputSignal();
@@ -68,7 +70,7 @@ int main(int argc, char const* argv[]) {
       // } else if (now > 12.0 && now < 16.0) {
       // rec = 0.5f;
       // mpr_sig_set_value(recordSignal, 0, 1, MPR_FLT, &rec);
-    } else if (now > 16.0) {
+    } else if (now > 12.0) {
       finish = true;
     }
 
