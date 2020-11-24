@@ -32,15 +32,16 @@ int main(int argc, char const* argv[]) {
 
   MapLooper::MapLooper mapLooper;
   MapLooper::Loop* testLoop = mapLooper.createLoop("test");
-  int ppqn = 2;
-  mpr_sig_set_value(testLoop->getPpqnSignal(), 0, 1, MPR_INT32, &ppqn);
+  float ppqn = 2.0f;
+  mpr_sig_set_value(testLoop->getPpqnSignal(), 0, 1, MPR_FLT, &ppqn);
 
   mpr_sig inputSignal = testLoop->getInputSignal();
   mpr_sig outputSignal = testLoop->getOutputSignal();
   mpr_sig noiseSignal = testLoop->getModulationSignal();
   mpr_sig recordSignal = testLoop->getRecordSignal();
 
-  testLoop->setLength(2.0);
+  float length = 2.0f;
+  mpr_sig_set_value(testLoop->getLengthSignal(), 0, 1, MPR_FLT, &length);
 
   float rec = 1.0f;
   float noise = 0.0f;

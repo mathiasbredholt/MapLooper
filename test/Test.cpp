@@ -37,8 +37,10 @@ int main(int argc, char const* argv[]) {
   mpr_sig outputSignal = testLoop->getOutputSignal();
   mpr_sig noiseSignal = testLoop->getModulationSignal();
   mpr_sig recordSignal = testLoop->getRecordSignal();
+  mpr_sig lengthSignal = testLoop->getLengthSignal();
 
-  testLoop->setLength(2.0);
+  float length = 2.0f;
+  mpr_sig_set_value(testLoop->getLengthSignal(), 0, 1, MPR_FLT, &length);
 
   float rec = 1.0f;
   float noise = 0.0f;
