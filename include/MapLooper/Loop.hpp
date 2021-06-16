@@ -44,25 +44,25 @@ class Loop {
 
     // Create control signals
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "control/record");
-    _sigRecord = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0, &sigMin,
+    _sigRecord = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, 0, &sigMin,
                              &sigMax, 0, 0, 0);
     mpr_sig_set_value(_sigRecord, 0, 1, MPR_FLT, &sigMin);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "control/length");
-    _sigLength = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, "beats",
+    _sigLength = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, "beats",
                              &lengthMin, &lengthMax, 0, 0, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "control/division");
-    _sigDivision = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, "ppqn",
+    _sigDivision = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, "ppqn",
                                &divisionMin, &divisionMax, 0, 0, 0);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "control/modulation");
-    _sigModulation = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_FLT, 0,
+    _sigModulation = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_FLT, 0,
                                  &sigMin, &sigMax, 0, 0, 0);
     mpr_sig_set_value(_sigModulation, 0, 1, MPR_FLT, &sigMin);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "control/mute");
-    _sigMute = mpr_sig_new(dev, MPR_DIR_IN, sigName, 1, MPR_INT32, 0, &muteMin,
+    _sigMute = mpr_sig_new(dev, MPR_DIR_OUT, sigName, 1, MPR_INT32, 0, &muteMin,
                            &muteMax, 0, 0, 0);
     mpr_sig_set_value(_sigMute, 0, 1, MPR_INT32, &muteMin);
 
@@ -79,12 +79,12 @@ class Loop {
 
     // Create local send/receive signals
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "local/send");
-    _sigLocalSend = mpr_sig_new(dev, MPR_DIR_IN, sigName, _vectorSize, _type, 0,
+    _sigLocalSend = mpr_sig_new(dev, MPR_DIR_OUT, sigName, _vectorSize, _type, 0,
                               &sigMin, &sigMax, 0, 0, 0);
     mpr_sig_set_value(_sigLocalSend, 0, _vectorSize, _type, &sigMin);
 
     std::snprintf(sigName, sizeof(sigName), "%s/%s", name, "local/recv");
-    _sigLocalReceive = mpr_sig_new(dev, MPR_DIR_OUT, sigName, _vectorSize, _type, 0,
+    _sigLocalReceive = mpr_sig_new(dev, MPR_DIR_IN, sigName, _vectorSize, _type, 0,
                                &sigMin, &sigMax, 0, 0, 0);
     mpr_sig_set_value(_sigLocalReceive, 0, _vectorSize, _type, &sigMin);
 
