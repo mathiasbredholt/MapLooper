@@ -69,6 +69,10 @@ class MapLooper {
     mpr_graph_subscribe(mpr_obj_get_graph(_dev), nullptr, MPR_SIG, -1);
   }
 
+  ~MapLooper() {
+    mpr_dev_free(_dev);
+  }
+
   Loop* createLoop(const char* id, mpr_type type = MPR_FLT,
                    int vectorSize = 1) {
     Loop* loop = new Loop(id, _dev, type, vectorSize);
