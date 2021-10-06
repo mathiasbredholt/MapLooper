@@ -59,7 +59,7 @@ class MapLooper {
     mpr_obj_set_prop(_sigTempo, MPR_PROP_DATA, 0, 1, MPR_PTR, &_link, 0);
 
     // Refresh all stale maps
-    mpr_list maps = mpr_graph_get_objs(mpr_obj_get_graph(_dev), MPR_MAP);
+    mpr_list maps = mpr_graph_get_list(mpr_obj_get_graph(_dev), MPR_MAP);
     while (maps) {
       mpr_map_refresh(*maps);
       maps = mpr_list_get_next(maps);
